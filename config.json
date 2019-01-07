@@ -1,10 +1,10 @@
 {
   "info": {
     "name": "KSC",
-    "url": "",
-    "version": "0.0.1",
+    "url": "https://github.com/mooz/jsbox-ksc/archive/master.zip",
+    "version": "0.0.2",
     "author": "Masafumi Oyamada",
-    "website": "",
+    "website": "https://github.com/mooz/jsbox-ksc",
     "types": 0
   },
   "settings": {

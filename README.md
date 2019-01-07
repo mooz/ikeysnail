@@ -6,9 +6,17 @@ KSC is a JSBox script for providing keyconfig experience on web-based rich text 
 
 ## Installation
 
-You need JSBox (https://docs.xteko.com/#/en/) to run KSC. After installing the
-JSBox, access https://tinyurl.com/jsbox-ksc from web browser of your iOS device
-to install KSC script.
+You need JSBox (https://docs.xteko.com/#/en/) to run KSC.
+
+After installing the JSBox, access
+
+<https://tinyurl.com/install-ksc>
+
+or
+
+<jsbox://import/?url=https%3A%2F%2Fgithub.com%2Fmooz%2Fjsbox-ksc%2Farchive%2Fmaster.zip>
+
+from the Safari of your iOS device to install the KSC script.
 
 ## Usage
 
@@ -34,4 +42,4 @@ https://scrapbox.io/customize/iPad%E3%81%A8%E5%A4%96%E9%83%A8%E3%82%AD%E3%83%BC%
 
 ## Misc
 
-KSC stands for KeySnail for Cococa.
+KSC stands for KeySnail for Cocoa.
