@@ -1,26 +1,14 @@
 const {userAgent, style} = require('./scripts/constants');
 const {userScript} = require('./scripts/user-script');
 const {evalScript, generateKeyCommands} = require("./scripts/key-remap");
-const {baseEmacsKeymap, overleafKeyMap, scrapboxKeyMap} = require("./scripts/keymap");
-
-/*
- [URL Scheme]
-
- Specify website (overleaf / scrapbox)
-
- jsbox://run?name=KSC&url=overleaf
- jsbox://run?name=KSC&url=scrapbox
- jsbox://run?name=KSC&url=hackmd
-
- or provides encoded URL (arbitrary website)
-
- jsbox://run?name=KSC&url=https%3A%2F%2Fscrapbox.io%2Fsome%2Fpage
-*/
+const {baseEmacsKeymap, overleafKeyMap, scrapboxKeyMap, hackmdKeyMap} = require("./scripts/keymap");
 
 const urlOverLeaf = "https://www.overleaf.com";
 const urlScrapbox = "https://scrapbox.io/";
 const urlHackMD = "https://hackmd.io/";
+
 const url = (() => {
+    return urlScrapbox;
     let queryUrl = $context.query.url;
     if (queryUrl) {
         if (queryUrl === "overleaf") {
@@ -34,7 +22,11 @@ const url = (() => {
         }
         return queryUrl;
     }
-    return $file.read('last-url.txt').string.trim();
+    try {
+        return $file.read('last-url.txt').string.trim();
+    } catch (x) {
+        return urlOverLeaf;
+    }
 })();
 
 // Decide keymap to use
@@ -44,6 +36,9 @@ if (url.startsWith(urlOverLeaf)) {
 }
 if (url.startsWith(urlScrapbox)) {
     keymap = Object.assign(keymap, scrapboxKeyMap);
+}
+if (url.startsWith(urlHackMD)) {
+    keymap = Object.assign(keymap, hackmdKeyMap);
 }
 
 // Render UI

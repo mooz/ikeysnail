@@ -22,9 +22,10 @@ from the Safari of your iOS device to install the KSC script.
 
 Specify pre-configured website names (overleaf, scrapbox, hackmd)
 
-- [jsbox://run?name=jsbox-ksc-master&url=overleaf](jsbox://run?name=jsbox-ksc-master&url=overleaf)
-- [jsbox://run?name=jsbox-ksc-master&url=scrapbox](jsbox://run?name=jsbox-ksc-master&url=overleaf)
-- [jsbox://run?name=jsbox-ksc-master&url=hackmd](jsbox://run?name=jsbox-ksc-master&url=overleaf)
+- Overleaf: [jsbox://run?name=jsbox-ksc-master&url=overleaf](jsbox://run?name=jsbox-ksc-master&url=overleaf)
+  - Overleaf v1 support is imperfect
+- Scrapbox: [jsbox://run?name=jsbox-ksc-master&url=scrapbox](jsbox://run?name=jsbox-ksc-master&url=overleaf)
+- HackMD: [jsbox://run?name=jsbox-ksc-master&url=hackmd](jsbox://run?name=jsbox-ksc-master&url=overleaf)
 
 or provide a website URL (encoded)
 

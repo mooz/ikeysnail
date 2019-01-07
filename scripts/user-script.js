@@ -1,5 +1,7 @@
 function userScript() {
-    let jsboxEditorElement;
+    let jsboxEditorElement = null;
+    let aceEditor = null;
+    let codeMirror = null;
 
     function log(message) {
         $notify('log', {message});
@@ -7,11 +9,56 @@ function userScript() {
 
     try {
         function getEditorElement() {
-            log(jsboxEditorElement + "");
-            return jsboxEditorElement || document.activeElement;
+            if (jsboxEditorElement) {
+                return jsboxEditorElement;
+            }
+            return document.activeElement;
+        }
+
+        function setupBackspaceHandler(editorElement, dispatcher) {
+            // Ctr+h should be handled separately.
+            let inComposition = false;
+            editorElement.addEventListener('compositionstart', () => {
+                inComposition = true;
+            }, false);
+            editorElement.addEventListener('compositionend', () => {
+                inComposition = false;
+            }, false);
+            editorElement.addEventListener('keydown', (keyEvent) => {
+                if (keyEvent.keyCode === 72 && keyEvent.key === "Backspace") {
+                    if (inComposition) {
+                        log("In composition. Ignore.");
+                    } else {
+                        keyEvent.stopPropagation();
+                        keyEvent.preventDefault();
+                        dispatcher();
+                    }
+                }
+            }, false);
+        }
+
+        function intializeCodeMirror() {
+            codeMirror = document.querySelector('.CodeMirror').CodeMirror;
+            jsboxEditorElement = codeMirror.display.input.getField();
+            setupBackspaceHandler(
+                jsboxEditorElement,
+                () => jsbox.dispatchKeydown(8)
+            );
+            jsboxEditorElement.style.cursor = 'none';
+        }
+
+        function initializeAce() {
+            // nothing
         }
 
         function initializeScrapbox() {
+            jsboxEditorElement = document.getElementById('text-input');
+
+            setupBackspaceHandler(
+                jsboxEditorElement,
+                () => jsbox.dispatchKeydown(72, false, true)
+            );
+
             jsboxEditorElement.addEventListener('DOMFocusIn', () => {
                 setTimeout(() => {
                     const offsetY = Math.floor(window.innerHeight / 3);
@@ -23,26 +70,7 @@ function userScript() {
                 }, 20);
             }, false);
 
-            // Ctr+h should be handled separately.
-            let inComposition = false;
-            jsboxEditorElement.addEventListener('compositionstart', () => {
-                inComposition = true;
-            }, false);
-            jsboxEditorElement.addEventListener('compositionend', () => {
-                inComposition = false;
-            }, false);
-            jsboxEditorElement.addEventListener('keydown', (keyEvent) => {
-                if (keyEvent.keyCode === 72 && keyEvent.key === "Backspace") {
-                    if (inComposition) {
-                        log("In composition. Ignore.");
-                    } else {
-                        keyEvent.stopPropagation();
-                        keyEvent.preventDefault();
-                        jsbox.dispatchKeydown(72, false, true);
-                    }
-                }
-            }, false);
-
+            // Cursor tweak
             let cursor = document.getElementsByClassName('cursor')[0];
             const textAreaStyle = jsboxEditorElement.style;
             const cursorStyle = cursor.style;
@@ -60,6 +88,7 @@ function userScript() {
             });
             cursorObserver.observe(cursor, {attributes: true, attributeFilter: ['style']});
 
+            // Last URL saver
             let lastUrl = '';
             const titleObserver = new MutationObserver(records => {
                 for (const record of records) {
@@ -76,6 +105,7 @@ function userScript() {
             const title = document.querySelector('head title');
             titleObserver.observe(title, {childList: true});
 
+            // Double tap handler
             let isFirstTap = true;
             document.getElementById('editor').addEventListener('click', () => {
                 if (isFirstTap) {
@@ -93,12 +123,17 @@ function userScript() {
         function initialize(trialTimes) {
             if (document.querySelector('.CodeMirror')) {
                 log('Code mirror Initialized.');
-                jsboxEditorElement = document.querySelector('.CodeMirror');
+                intializeCodeMirror();
             } else if (document.getElementById('text-input')) {
                 // Scrapbox
                 log('Scrapbox Initialized.');
-                jsboxEditorElement = document.getElementById('text-input');
                 initializeScrapbox();
+            } else if (window._debug_editors) {
+                // Overleaf v2 provides access to ACE editor instance as `window._debug_editors`.
+                // See https://www.overleaf.com/learn/how-to/How_can_I_define_custom_Vim_macros_in_a_vimrc_file_on_Overleaf%3F
+                log('Overleaf initialized');
+                aceEditor = window._debug_editors[window._debug_editors.length - 1];
+                return;
             }
 
             if (!jsboxEditorElement) {
@@ -116,27 +151,29 @@ function userScript() {
         initialize(0);
 
         window.jsbox = {
-            keydownEvent: document.createEvent('Event'),
-            keypressEvent: document.createEvent('Event'),
             'dispatchKeydown': function (keyCode, withShift = false, withCtrl = false, withAlt = false, withCommand = false) {
-                this.keydownEvent.keyCode = keyCode;
-                this.keydownEvent.which = keyCode;
-                this.keydownEvent.shiftKey = withShift;
-                this.keydownEvent.ctrlKey = withCtrl;
-                this.keydownEvent.altKey = withAlt;
-                this.keydownEvent.metaKey = withCommand;
-                getEditorElement().dispatchEvent(this.keydownEvent);
+                let ev = document.createEvent('Event');
+                ev.initEvent('keydown', true, true);
+                ev.keyCode = keyCode;
+                ev.which = keyCode;
+                ev.shiftKey = withShift;
+                ev.ctrlKey = withCtrl;
+                ev.altKey = withAlt;
+                ev.metaKey = withCommand;
+                getEditorElement().dispatchEvent(ev);
             },
             'dispatchKeypress': function (charCode, withShift = false, withCtrl = false, withAlt = false, withCommand = false, key = null) {
-                this.keypressEvent.charCode = this.keypressEvent.keyCode = this.keypressEvent.which = 92;
+                let ev = document.createEvent('Event');
+                ev.initEvent('keypress', true, true);
+                ev.charCode = ev.keyCode = ev.which = 92;
                 if (key) {
-                    this.keypressEvent.key = key;
+                    ev.key = key;
                 }
-                this.keypressEvent.shiftKey = withShift;
-                this.keypressEvent.ctrlKey = withCtrl;
-                this.keypressEvent.altKey = withAlt;
-                this.keypressEvent.metaKey = withCommand;
-                getEditorElement().dispatchEvent(this.keypressEvent);
+                ev.shiftKey = withShift;
+                ev.ctrlKey = withCtrl;
+                ev.altKey = withAlt;
+                ev.metaKey = withCommand;
+                getEditorElement().dispatchEvent(ev);
             },
             'doubleClick': function () {
                 const dclEvent = new MouseEvent('dblclick', {
@@ -147,33 +184,35 @@ function userScript() {
                 getEditorElement().dispatchEvent(dclEvent);
             },
             'getSelectedText': function () {
-                if (window._debug_editors) {
-                    // Overleaf v2 provides access to ACE editor instance as `window._debug_editors`.
-                    // See https://www.overleaf.com/learn/how-to/How_can_I_define_custom_Vim_macros_in_a_vimrc_file_on_Overleaf%3F
-                    return window._debug_editors[window._debug_editors.length-1].getCopyText();
+                if (aceEditor) {
+                    return aceEditor.getCopyText();
+                } else if (codeMirror) {
+                    return codeMirror.getSelection();
                 } else {
                     return window.getSelection().toString();
                 }
             },
-            'insertText': function (text, escaped=false) {
+            'insertText': function (text, escaped = false) {
                 if (escaped) {
                     text = unescape(text);
                 }
-                if (window._debug_editors) {
-                    // Overleaf v2
-                    window._debug_editors[window._debug_editors.length-1].insert(text);
+                if (aceEditor) {
+                    aceEditor.insert(text);
+                } else if (codeMirror) {
+                    codeMirror.replaceSelection(text);
+                } else {
+                    document.execCommand('insertText', false, text);
                 }
             },
             'recenter': function () {
-                if (window._debug_editors) {
-                    // Overleaf v2
-                    window._debug_editors[window._debug_editors.length-1].centerSelection()
+                if (aceEditor) {
+                    aceEditor.centerSelection();
+                } else if (codeMirror) {
+                    var pos = codeMirror.cursorCoords(null, "local");
+                    codeMirror.scrollTo(null, (pos.top + pos.bottom) / 2 - codeMirror.getScrollInfo().clientHeight / 2);
                 }
             }
         };
-
-        jsbox.keydownEvent.initEvent('keydown', true, true);
-        jsbox.keypressEvent.initEvent('keypress', true, true);
     } catch (x) {
         log("Error executing the user script");
         log(x + "");
