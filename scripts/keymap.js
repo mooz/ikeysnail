@@ -1,4 +1,4 @@
-const {dispatchKeys, evalScript} = require("./scripts/key-remap");
+const {dispatchKeys, evalScript} = require("./key-remap");
 
 const baseEmacsKeymap = {
     "UIKeyInputRightArrow": "RIGHT",
