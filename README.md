@@ -14,7 +14,7 @@ After installing the JSBox, access
 
 or
 
-<jsbox://import/?url=https%3A%2F%2Fgithub.com%2Fmooz%2Fjsbox-ksc%2Farchive%2Fmaster.zip>
+[jsbox://import/?url=https%3A%2F%2Fgithub.com%2Fmooz%2Fjsbox-ksc%2Farchive%2Fmaster.zip](jsbox://run?name=jsbox-ksc-master&url=overleaf)
 
 from the Safari of your iOS device to install the KSC script.
 
@@ -22,23 +22,23 @@ from the Safari of your iOS device to install the KSC script.
 
 Specify pre-configured website names (overleaf, scrapbox, hackmd)
 
-- jsbox://run?name=KSC&url=overleaf
-- jsbox://run?name=KSC&url=scrapbox
-- jsbox://run?name=KSC&url=hackmd
+- [jsbox://run?name=jsbox-ksc-master&url=overleaf](jsbox://run?name=jsbox-ksc-master&url=overleaf)
+- [jsbox://run?name=jsbox-ksc-master&url=scrapbox](jsbox://run?name=jsbox-ksc-master&url=overleaf)
+- [jsbox://run?name=jsbox-ksc-master&url=hackmd](jsbox://run?name=jsbox-ksc-master&url=overleaf)
 
 or provide a website URL (encoded)
 
-- jsbox://run?name=KSC&url=https%3A%2F%2Fscrapbox.io%2Fsome%2Fpage
+- [jsbox://run?name=jsbox-ksc-master&url=https%3A%2F%2Fscrapbox.io%2Fsome%2Fpage](jsbox://run?name=jsbox-ksc-master&url=overleaf)
 
 ## Customization
 
-Edit `scripts/keymap.js` for customize key bindings.
+Edit `scripts/keymap.js` for customizing key bindings.
 
 ## Acknowledgements
 
 Heavily based on the following script (thanks to @four_or_three).
 
-https://scrapbox.io/customize/iPad%E3%81%A8%E5%A4%96%E9%83%A8%E3%82%AD%E3%83%BC%E3%83%9C%E3%83%BC%E3%83%89%E3%81%A7%E7%B7%A8%E9%9B%86%E3%81%A7%E3%81%8D%E3%82%8BScrapbox%E3%81%AE%E3%83%96%E3%83%A9%E3%82%A6%E3%82%B6
+<https://scrapbox.io/customize/iPad%E3%81%A8%E5%A4%96%E9%83%A8%E3%82%AD%E3%83%BC%E3%83%9C%E3%83%BC%E3%83%89%E3%81%A7%E7%B7%A8%E9%9B%86%E3%81%A7%E3%81%8D%E3%82%8BScrapbox%E3%81%AE%E3%83%96%E3%83%A9%E3%82%A6%E3%82%B6>
 
 ## Misc
 
