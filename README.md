@@ -14,13 +14,13 @@ to install KSC script.
 
 Specify pre-configured website names (overleaf, scrapbox, hackmd)
 
-- jsbox://run?name=KeySnail&url=overleaf
-- jsbox://run?name=KeySnail&url=scrapbox
-- jsbox://run?name=KeySnail&url=hackmd
+- jsbox://run?name=KSC&url=overleaf
+- jsbox://run?name=KSC&url=scrapbox
+- jsbox://run?name=KSC&url=hackmd
 
 or provide a website URL (encoded)
 
-- jsbox://run?name=KeySnail&url=https%3A%2F%2Fscrapbox.io%2Fsome%2Fpage
+- jsbox://run?name=KSC&url=https%3A%2F%2Fscrapbox.io%2Fsome%2Fpage
 
 ## Customization
 
