@@ -8,7 +8,6 @@ const urlScrapbox = "https://scrapbox.io/";
 const urlHackMD = "https://hackmd.io/";
 
 const url = (() => {
-    return urlScrapbox;
     let queryUrl = $context.query.url;
     if (queryUrl) {
         if (queryUrl === "overleaf") {
