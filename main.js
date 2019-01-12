@@ -1,84 +1,102 @@
-const {userAgent, style} = require('./scripts/constants');
+const {userAgent} = require('./scripts/constants');
 const {userScript} = require('./scripts/user-script');
 const {evalScript, generateKeyCommands} = require("./scripts/key-remap");
-const {baseEmacsKeymap, overleafKeyMap, scrapboxKeyMap, hackmdKeyMap} = require("./scripts/keymap");
+const {baseEmacsKeymap} = require("./scripts/keymap");
+const {sites} = require('./scripts/sites');
 
-const urlOverLeaf = "https://www.overleaf.com";
-const urlScrapbox = "https://scrapbox.io/";
-const urlHackMD = "https://hackmd.io/";
-
+// Decide URL to Visit
 const url = (() => {
     let queryUrl = $context.query.url;
+    for (let [siteURL, siteKeymap, siteAlias, siteStyle] of sites) {
+        if (siteAlias === queryUrl) {
+            return siteURL;
+        }
+    }
     if (queryUrl) {
-        if (queryUrl === "overleaf") {
-            queryUrl = urlOverLeaf;
-        }
-        if (queryUrl === "scrapbox") {
-            queryUrl = urlScrapbox;
-        }
-        if (queryUrl === "hackmd") {
-            queryUrl = urlHackMD;
-        }
         return queryUrl;
     }
     try {
         return $file.read('last-url.txt').string.trim();
     } catch (x) {
-        return urlOverLeaf;
+        return sites[0][0];
     }
 })();
 
-// Decide keymap to use
-let keymap = Object.assign({}, baseEmacsKeymap);
-if (url.startsWith(urlOverLeaf)) {
-    keymap = Object.assign(keymap, overleafKeyMap);
-}
-if (url.startsWith(urlScrapbox)) {
-    keymap = Object.assign(keymap, scrapboxKeyMap);
-}
-if (url.startsWith(urlHackMD)) {
-    keymap = Object.assign(keymap, hackmdKeyMap);
+async function showMenu() {
+    const chosen = await $ui.menu({items: sites.map(site => site[2] + " (" + site[0] + ")")});
+    if (!chosen) return;
+    const url = sites[chosen.index][0];
+    startSession(url);
 }
 
-// Render UI
-$ui.render({
-    props: {
-        keyCommands: generateKeyCommands(keymap)
-    },
-    events: {
-        appeared: () => {
-            $('webView').runtimeValue().$setAllowsBackForwardNavigationGestures(true);
+// Session to start
+function startSession(urlToVisit) {
+    let keymap = Object.assign({}, baseEmacsKeymap);
+    let style = "";
+
+    for (let [siteURL, siteKeyMap, siteAlias, siteStyle] of sites) {
+        if (urlToVisit.startsWith(siteURL)) {
+            siteKeyMap = Object.assign(keymap, siteKeyMap);
+            gstyle += " " + siteStyle;
         }
-    },
-    views: [
-        {
-            type: 'web',
-            props: {
-                id: 'webView',
-                url: url,
-                ua: userAgent,
-                script: userScript,
-                style: style
+    }
+
+    // Render UI
+    $ui.render({
+        props: {
+            keyCommands: generateKeyCommands(keymap)
+        },
+        events: {
+            appeared: () => {
+                $('webView').runtimeValue().$setAllowsBackForwardNavigationGestures(true);
+            }
+        },
+        views: [
+            {
+                type: 'web',
+                props: {
+                    id: 'webView',
+                    url: urlToVisit,
+                    ua: userAgent,
+                    script: userScript,
+                    style: style
+                },
+                events: {
+                    log: ({message}) => {
+                        // console.log(message);
+                    },
+                    didFinish: () => {
+                        saveLastUrl($('webView').url);
+                    },
+                    urlDidChange: sender => {
+                        console.log(sender.url)
+                        saveLastUrl(sender.url);
+                    },
+                    doubleTapped: async () => {
+                        evalScript(`jsbox.doubleClick();`);
+                    }
+                },
+                layout: $layout.fill
             },
-            events: {
-                log: ({message}) => {
-                    // console.log(message);
+            {
+                type: 'button',
+                props: {
+                    icon: $icon('067', $rgba(100, 100, 100, 0.65), $size(20, 20)),
+                    bgcolor: $color('clear')
                 },
-                didFinish: () => {
-                    saveLastUrl($('webView').url);
+                events: {
+                    tapped: () => {
+                        showMenu();
+                    }
                 },
-                urlDidChange: sender => {
-                    console.log(sender.url)
-                    saveLastUrl(sender.url);
-                },
-                doubleTapped: async () => {
-                    evalScript(`jsbox.doubleClick();`);
+                layout: make => {
+                    make.bottom.inset(80);
+                    make.right.inset(5);
                 }
-            },
-            layout: $layout.fill
-        }
-    ]
-});
+            }
+        ]
+    });
+}
 
 function saveLastUrl(url) {
     $file.write({
@@ -86,3 +104,5 @@ function saveLastUrl(url) {
         path: 'last-url.txt'
     });
 }
+
+startSession(url);
