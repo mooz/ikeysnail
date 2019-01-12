@@ -37,7 +37,7 @@ function startSession(urlToVisit) {
     for (let [siteURL, siteKeyMap, siteAlias, siteStyle] of sites) {
         if (urlToVisit.startsWith(siteURL)) {
             siteKeyMap = Object.assign(keymap, siteKeyMap);
-            gstyle += " " + siteStyle;
+            style += " " + siteStyle;
         }
     }
 
