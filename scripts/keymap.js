@@ -72,7 +72,9 @@ const scrapboxKeyMap = {
 };
 
 // Overleaf (ACE Editor)
-const overleafKeyMap = {};
+const overleafKeyMap = {
+    "ctrl-h": () => dispatchKeys("back_space")
+};
 
 // HackMD (CodeMirror)
 const hackmdKeyMap = {};
