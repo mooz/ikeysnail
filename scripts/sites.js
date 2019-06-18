@@ -10,7 +10,11 @@ function createSite(url, keymap, alias, style="") {
 
 let sites = [];
 
-sites.push(createSite("https://www.overleaf.com/", overleafKeyMap, "overleaf"));
+sites.push(createSite("https://www.overleaf.com/", overleafKeyMap, "overleaf", `
+.toolbar { font-size: small !important; }
+.entity { font-size: small !important; }
+`));
+
 sites.push(createSite("https://scrapbox.io/", scrapboxKeyMap, "scrapbox", `
 #editor {
   caret-color: transparent !important;
