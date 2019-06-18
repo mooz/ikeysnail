@@ -128,11 +128,25 @@ function userScript() {
                 // Scrapbox
                 log('Scrapbox Initialized.');
                 initializeScrapbox();
-            } else if (window._debug_editors) {
+            } else if (window._debug_editors && document.querySelector(".file-tree ul.file-tree-list")) {
                 // Overleaf v2 provides access to ACE editor instance as `window._debug_editors`.
                 // See https://www.overleaf.com/learn/how-to/How_can_I_define_custom_Vim_macros_in_a_vimrc_file_on_Overleaf%3F
                 log('Overleaf initialized');
                 aceEditor = window._debug_editors[window._debug_editors.length - 1];
+                (() => {
+                    let scrollAmount = 300;
+                    let fileTreeToolbar = $(".file-tree .toolbar-right");
+                    let fileList = $(".file-tree ul.file-tree-list");
+                
+                    fileTreeToolbar.append($(`<a href=""><i class="fa fa-fw fa-arrow-up" /></a>`).on(
+                        "click",
+                         () => fileList.scrollTop(fileList.scrollTop() - scrollAmount)
+                    ));
+                    fileTreeToolbar.append($(`<a href=""><i class="fa fa-fw fa-arrow-down" /></a>`).on(
+                        "click",
+                         () => fileList.scrollTop(fileList.scrollTop() + scrollAmount)
+                    ));
+                })();
                 return;
             }
 
