@@ -1,74 +1,102 @@
-const {dispatchKeys, evalScript} = require("./key-remap");
+const { dispatchKeys, evalScript } = require("./key-remap");
+
+function sleep(msec) {
+  return new Promise(resolve => setTimeout(resolve, msec));
+}
+
+function marked(key) {
+  return function() {
+    dispatchKeys(key, false, true);
+  };
+}
 
 const baseEmacsKeymap = {
-    // We prefer \ instead of ¥, right?
-    "¥": () => evalScript(`jsbox.insertText('\\\\');`),
+  // We prefer \ instead of ¥, right?
+  "¥": () => evalScript(`jsbox.insertText('\\\\');`),
 
-    "UIKeyInputRightArrow": "RIGHT",
-    "UIKeyInputLeftArrow": "LEFT",
-    "UIKeyInputDownArrow": "DOWN",
-    "UIKeyInputUpArrow": "UP",
-    "shift-UIKeyInputRightArrow": "shift-RIGHT",
-    "shift-UIKeyInputLeftArrow": "shift-LEFT",
-    "shift-UIKeyInputDownArrow": "shift-DOWN",
-    "shift-UIKeyInputUpArrow": "shift-UP",
+  UIKeyInputRightArrow: marked("RIGHT"),
+  UIKeyInputLeftArrow: marked("LEFT"),
+  UIKeyInputDownArrow: marked("DOWN"),
+  UIKeyInputUpArrow: marked("UP"),
+  "shift-UIKeyInputRightArrow": marked("shift-RIGHT"),
+  "shift-UIKeyInputLeftArrow": marked("shift-LEFT"),
+  "shift-UIKeyInputDownArrow": marked("shift-DOWN"),
+  "shift-UIKeyInputUpArrow": marked("shift-UP"),
 
-    "command-<": "ctrl-home",
+  "command-<": marked("ctrl-home"),
+  "command-.": marked("ctrl-end"),
 
-    "ctrl-p": "UP",
-    "ctrl-n": "DOWN",
-    "ctrl-f": "RIGHT",
-    "ctrl-b": "LEFT",
+  "ctrl-p": marked("UP"),
+  "ctrl-n": marked("DOWN"),
+  "ctrl-f": marked("RIGHT"),
+  "ctrl-b": marked("LEFT"),
 
-    "ctrl-a": "home",
-    "ctrl-e": "end",
+  "ctrl-a": marked("home"),
+  "ctrl-e": marked("end"),
 
-    "ctrl-d": "delete",
-    "ctrl-i": "tab",
-    "ctrl-t": "ctrl-t",
+  "ctrl-d": "delete",
+  "ctrl-i": "tab",
+  "ctrl-t": "ctrl-t",
 
-    "ctrl-v": "page_down",
-    "command-v": "page_up",
+  "ctrl-v": marked("page_down"),
+  "command-v": marked("page_up"),
 
-    "ctrl-y": async () => {
-        evalScript(`jsbox.insertText('${escape($clipboard.text)}', true)`);
-    },
-    "ctrl-k": async () => {
-        await dispatchKeys("shift-end", true);
-        const selectedText = await evalScript(`jsbox.getSelectedText()`, true);
-        await dispatchKeys("back_space", true);
-        $clipboard.set({"type": "public.plain-text", "value": selectedText});
-    },
-    "ctrl-w": async () => {
-        const selectedText = await evalScript(`jsbox.getSelectedText()`, true);
-        await dispatchKeys("back_space", true);
-        $clipboard.set({"type": "public.plain-text", "value": selectedText});
-    },
+  "ctrl-y": async () => {
+    evalScript(`jsbox.insertText('${escape($clipboard.text)}', true)`);
+  },
+  "ctrl-k": async () => {
+    await dispatchKeys("shift-end", true, true);
+    const selectedText = await evalScript(`jsbox.getSelectedText()`, true);
+    await dispatchKeys("back_space", true);
+    $clipboard.set({ type: "public.plain-text", value: selectedText });
+  },
+  "ctrl-w": async () => {
+    const selectedText = await evalScript(`jsbox.getSelectedText()`, true);
+    await dispatchKeys("back_space", true);
+    $clipboard.set({ type: "public.plain-text", value: selectedText });
+  },
+  "command-w": async () => {
+    const selectedText = await evalScript(`jsbox.getSelectedText()`, true);
+    $clipboard.set({ type: "public.plain-text", value: selectedText });
+  },
+  "ctrl-c": async () => {
+    const selectedText = await evalScript(`jsbox.getSelectedText()`, true);
+    $clipboard.set({ type: "public.plain-text", value: selectedText });
+    await dispatchKeys("back_space", true);
+  },
 
-    "ctrl-l": () => {
-        evalScript(`jsbox.recenter()`);
-    },
+  "ctrl-l": () => {
+    evalScript(`jsbox.recenter()`);
+  },
 
-    "command-f": "ctrl-RIGHT",
-    "command-b": "ctrl-LEFT",
-    "command-d": "ctrl-delete",
+  "command-f": marked("ctrl-RIGHT"),
+  "command-b": marked("ctrl-LEFT"),
+  "command-d": marked("ctrl-delete"),
 
-    "ctrl-_": "ctrl-z",
-    "ctrl-z": "ctrl-z",
-    "ctrl-s": "ctrl-f",
-    "ctrl-g": "escape",
-    "ctrl-r": "ctrl-shift-k",
-    "command-s": "ctrl-h",
+  "ctrl- ": () => {
+    evalScript(`jsbox.setMark()`);
+  },
+
+  "ctrl-_": "ctrl-z",
+  "ctrl-z": "ctrl-z",
+  "ctrl-s": "ctrl-f",
+  "ctrl-g": "escape",
+  "ctrl-r": "ctrl-shift-k",
+  "command-s": "ctrl-h"
 };
 
 // Scrapbox
 const scrapboxKeyMap = {
-    "command-f": "ALT-RIGHT",
-    "command-b": "ALT-LEFT",
-    "command-d": ["shift-ALT-RIGHT", "back_space"],
-    "ctrl-k": "ctrl-k",
-    "ctrl-y": "ctrl-y",
-    "ctrl-w": "ctrl-w",
+  "command-f": marked("ALT-RIGHT"),
+  "command-b": marked("ALT-LEFT"),
+  "command-d": ["shift-ALT-RIGHT", "back_space"],
+  "ctrl-UIKeyInputRightArrow": "ctrl-RIGHT",
+  "ctrl-UIKeyInputLeftArrow": "ctrl-LEFT",
+  "ctrl-UIKeyInputDownArrow": "ctrl-DOWN",
+  "ctrl-UIKeyInputUpArrow": "ctrl-UP",
+  // "ctrl-k": "ctrl-k",
+  // "ctrl-y": "ctrl-y",
+  "ctrl-i": "ctrl-i"
 };
 
 // Overleaf (ACE Editor)
@@ -79,4 +107,9 @@ const overleafKeyMap = {
 // HackMD (CodeMirror)
 const hackmdKeyMap = {};
 
-module.exports = {baseEmacsKeymap, scrapboxKeyMap, overleafKeyMap, hackmdKeyMap};
+module.exports = {
+  baseEmacsKeymap,
+  scrapboxKeyMap,
+  overleafKeyMap,
+  hackmdKeyMap
+};

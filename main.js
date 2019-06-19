@@ -1,6 +1,4 @@
 const {userAgent} = require('./scripts/constants');
-const {userScript} = require('./scripts/user-script');
-const {evalScript, generateKeyCommands} = require("./scripts/key-remap");
 const {baseEmacsKeymap} = require("./scripts/keymap");
 const {sites} = require('./scripts/sites');
 
@@ -26,11 +24,15 @@ async function showMenu() {
     const chosen = await $ui.menu({items: sites.map(site => site[2] + " (" + site[0] + ")")});
     if (!chosen) return;
     const url = sites[chosen.index][0];
-    startSession(url);
+    saveLastUrl(url);
+    $addin.restart();
+    // startSession(url);
 }
 
 // Session to start
 function startSession(urlToVisit) {
+    const {evalScript, generateKeyCommands} = require("./scripts/key-remap");
+
     let keymap = Object.assign({}, baseEmacsKeymap);
     let style = "";
 
@@ -40,6 +42,10 @@ function startSession(urlToVisit) {
             style += " " + siteStyle;
         }
     }
+
+    let urlsString = `[` + sites.map(a => `'${a[0]}'`).join(`,`) + `]`;
+    let userScript = $file.read('./scripts/user-script.js').string;
+    userScript = userScript.replace(`SITE_URLS`, urlsString);
 
     // Render UI
     $ui.render({
@@ -65,8 +71,8 @@ function startSession(urlToVisit) {
                     log: ({message}) => {
                         // console.log(message);
                     },
-                    didFinish: () => {
-                        saveLastUrl($('webView').url);
+                    didFinish: (sender) => {
+                        saveLastUrl(sender.url);
                     },
                     urlDidChange: sender => {
                         console.log(sender.url)
