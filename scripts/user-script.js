@@ -327,6 +327,13 @@
             (pos.top + pos.bottom) / 2 -
               codeMirror.getScrollInfo().clientHeight / 2
           );
+        } else if (document.querySelector(".cursor")) {
+          var $target = $(".cursor");
+          var offset = $target.offset() || { top: 0, left: 0 };
+          var outerHeight = $target.outerHeight();
+          $(window).scrollTop(
+            offset.top - (window.innerHeight - outerHeight) / 2
+          );
         }
       }
     };
