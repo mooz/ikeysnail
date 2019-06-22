@@ -96,6 +96,7 @@ const scrapboxKeyMap = {
   "ctrl-UIKeyInputUpArrow": "ctrl-UP",
   // "ctrl-k": "ctrl-k",
   // "ctrl-y": "ctrl-y",
+  "ctrl-t": "ctrl-t",
   "ctrl-i": "ctrl-i"
 };
 
