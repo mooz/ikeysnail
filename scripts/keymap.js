@@ -77,9 +77,8 @@ const baseEmacsKeymap = {
     evalScript(`jsbox.setMark()`);
   },
 
-  "ctrl-_": "ctrl-z",
-  "ctrl-z": "ctrl-z",
-  "ctrl-s": "ctrl-f",
+  "ctrl-_": "command-z",
+  "ctrl-z": "command-z",
   "ctrl-g": "escape",
   "ctrl-r": "ctrl-shift-k",
   "command-s": "ctrl-h"
