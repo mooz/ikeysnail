@@ -1,11 +1,10 @@
-const {userAgent} = require('./scripts/constants');
 const {baseEmacsKeymap} = require("./scripts/keymap");
 const {sites} = require('./scripts/sites');
 
 // Decide URL to Visit
 const url = (() => {
     let queryUrl = $context.query.url;
-    for (let [siteURL, siteKeymap, siteAlias, siteStyle] of sites) {
+    for (let [siteURL, siteKeymap, siteAlias, siteStyle, siteUA] of sites) {
         if (siteAlias === queryUrl) {
             return siteURL;
         }
@@ -35,11 +34,15 @@ function startSession(urlToVisit) {
 
     let keymap = Object.assign({}, baseEmacsKeymap);
     let style = "";
+    let ua = null;
 
-    for (let [siteURL, siteKeyMap, siteAlias, siteStyle] of sites) {
+    for (let [siteURL, siteKeyMap, siteAlias, siteStyle, siteUA] of sites) {
         if (urlToVisit.startsWith(siteURL)) {
             siteKeyMap = Object.assign(keymap, siteKeyMap);
             style += " " + siteStyle;
+            if (siteUA) {
+              ua = siteUA;
+            }
         }
     }
 
@@ -63,7 +66,7 @@ function startSession(urlToVisit) {
                 props: {
                     id: 'webView',
                     url: urlToVisit,
-                    ua: userAgent,
+                    ua: ua,
                     script: userScript,
                     style: style
                 },

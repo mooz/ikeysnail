@@ -1,11 +1,12 @@
 const { overleafKeyMap, scrapboxKeyMap, hackmdKeyMap } = require("./keymap");
+const { userAgentMac, userAgentOriginal } = require("./constants");
 
-function createSite(url, keymap, alias, style = "") {
+function createSite(url, keymap, alias, style = "", ua = userAgentOriginal) {
   if (style) {
     // user style containing newlines are not effective
     style = style.replace(/[\r\n]+/g, " ");
   }
-  return [url, keymap, alias, style];
+  return [url, keymap, alias, style, ua];
 }
 
 let sites = [];
@@ -30,7 +31,7 @@ sites.push(
     `
 #editor {
   caret-color: transparent !important;
-}`
+}`, userAgentMac
   )
 );
 

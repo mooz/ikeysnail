@@ -241,22 +241,6 @@
           ev.which = keyCode;
           ev.shiftKey = withShift;
           if (keepMark && marked) {
-            ev.shiftKey = true;
-          }
-          ev.ctrlKey = withCtrl;
-          ev.altKey = withAlt;
-          ev.metaKey = withCommand;
-          getEditorElement().dispatchEvent(ev);
-        }
-        {
-          let ev = document.createEvent("Event");
-          ev.initEvent("keyup", true, true);
-          ev.__keepMark__ = keepMark;
-          ev.keyCode = keyCode;
-          ev.which = keyCode;
-          ev.shiftKey = withShift;
-          if (keepMark && marked) {
-            ev.shiftKey = true;
           }
           ev.ctrlKey = withCtrl;
           ev.altKey = withAlt;
