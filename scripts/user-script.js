@@ -19,10 +19,7 @@
 
   try {
     function getEditorElement() {
-      if (jsboxEditorElement) {
-        return jsboxEditorElement;
-      }
-      return document.activeElement;
+      return document.activeElement || document.documentElement;
     }
 
     function setupBackspaceHandler(editorElement, dispatcher) {
@@ -241,6 +238,7 @@
           ev.which = keyCode;
           ev.shiftKey = withShift;
           if (keepMark && marked) {
+            ev.shiftKey = true;
           }
           ev.ctrlKey = withCtrl;
           ev.altKey = withAlt;
