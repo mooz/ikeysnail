@@ -117,6 +117,9 @@ function startSession(urlToVisit) {
 }
 
 function saveLastUrl(url) {
+    if (!url || url === "about:blank") {
+      return;
+    }
     $file.write({
         data: $data({string: url}),
         path: 'last-url.txt'
