@@ -48,4 +48,6 @@ sites.push(
   )
 );
 
+sites.push(createSite("https://www.google.com", null, "🔍 Google", ``));
+
 module.exports.sites = sites;
