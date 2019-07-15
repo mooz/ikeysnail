@@ -20,9 +20,18 @@ const url = (() => {
 })();
 
 async function showMenu() {
-    const chosen = await $ui.menu({items: sites.map(site => site[2] + " (" + site[0] + ")")});
+    let targetSites = sites;
+
+    let clipboardText = $clipboard.text;
+    if (clipboardText && /^https?:\/\//.test(clipboardText)) {
+      targetSites = targetSites.concat([[clipboardText, null, "📋"]]);
+    }
+
+    const chosen = await $ui.menu({
+      items: targetSites.map(site => site[2] + " (" + site[0] + ")")
+    });
     if (!chosen) return;
-    const url = sites[chosen.index][0];
+    const url = targetSites[chosen.index][0];
     saveLastUrl(url);
     $addin.restart();
     // startSession(url);
