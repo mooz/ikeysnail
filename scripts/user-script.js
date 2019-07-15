@@ -5,9 +5,8 @@
     $notify("log", { message });
   }
 
-  if (
-    SITE_URLS.filter(prefix => location.href.indexOf(prefix) === 0).length === 0
-  ) {
+  if (window !== window.parent) {
+    // Do not load in ifrmae pages
     return;
   }
 
