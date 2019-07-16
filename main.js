@@ -87,7 +87,7 @@ function startSession(urlToVisit) {
                         saveLastUrl(sender.url);
                     },
                     urlDidChange: sender => {
-                        console.log(sender.url)
+                        console.log(sender.url);
                         saveLastUrl(sender.url);
                     },
                     doubleTapped: async () => {
