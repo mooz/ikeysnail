@@ -81,13 +81,9 @@ function keyStringToDispatchScript(toKeys, keepMark = false) {
     .map(compositeKeyString => {
       const key = toJSKey(compositeKeyString);
       if (key.press) {
-        return `jsbox.dispatchKeypress(${key.key}, ${key.shiftKey}, ${
-          key.ctrlKey
-        }, ${key.altKey}, ${key.metaKey}, keepMark=${keepMark});`;
+        return `jsbox.dispatchKeypress(${key.key}, ${key.shiftKey}, ${key.ctrlKey}, ${key.altKey}, ${key.metaKey}, keepMark=${keepMark});`;
       } else {
-        return `jsbox.dispatchKeydown(${key.key}, ${key.shiftKey}, ${
-          key.ctrlKey
-        }, ${key.altKey}, ${key.metaKey}, keepMark=${keepMark});`;
+        return `jsbox.dispatchKeydown(${key.key}, ${key.shiftKey}, ${key.ctrlKey}, ${key.altKey}, ${key.metaKey}, keepMark=${keepMark});`;
       }
     })
     .join("\n");

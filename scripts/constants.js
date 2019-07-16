@@ -1,5 +1,4 @@
-const userAgentMac =
-  `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0 Safari/605.1.15 JSBox`;
+const userAgentMac = `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0 Safari/605.1.15 JSBox`;
 
 const userAgentOriginal = null;
 
