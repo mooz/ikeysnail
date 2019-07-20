@@ -120,5 +120,21 @@ defineSite(
 );
 
 defineSite("https://www.google.com", {}, "Google", ``);
+defineSite(
+  "https://docs.google.com/",
+  {
+    rich: {
+      "meta-f": marked("alt-RIGHT"),
+      "meta-b": marked("alt-LEFT"),
+      "meta-d": marked("alt-delete"),
+      "ctrl-_": "ctrl-z",
+      "ctrl-z": "meta-z",
+      b: "meta-y",
+      "ctrl-s": "ctrl-f"
+    }
+  },
+  "Google Docs (Slide)",
+  ``
+);
 
 exports.sites = sites;

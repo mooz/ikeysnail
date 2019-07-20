@@ -34,8 +34,136 @@
   let gRichTextEditorInputElement = null;
   let gAceEditor = null;
   let gCodeMirror = null;
+  let gGoogleDocsEditor = null;
   let gStatusMarked = false;
   var gHitHintDisposerInternal = null;
+
+  const keyCodeMap = {
+    CANCEL: 3,
+    HELP: 6,
+    BACK_SPACE: 8,
+    TAB: 9,
+    CLEAR: 12,
+    RETURN: 13,
+    ENTER: 14,
+    SHIFT: 16,
+    CONTROL: 17,
+    ALT: 18,
+    PAUSE: 19,
+    CAPS_LOCK: 20,
+    ESCAPE: 27,
+    SPACE: 32,
+    PAGE_UP: 33,
+    PAGE_DOWN: 34,
+    END: 35,
+    HOME: 36,
+    LEFT: 37,
+    UP: 38,
+    RIGHT: 39,
+    DOWN: 40,
+    PRINTSCREEN: 44,
+    INSERT: 45,
+    DELETE: 46,
+    "0": 48,
+    "1": 49,
+    "2": 50,
+    "3": 51,
+    "4": 52,
+    "5": 53,
+    "6": 54,
+    "7": 55,
+    "8": 56,
+    "9": 57,
+    SEMICOLON: 59,
+    EQUALS: 61,
+    A: 65,
+    B: 66,
+    C: 67,
+    D: 68,
+    E: 69,
+    F: 70,
+    G: 71,
+    H: 72,
+    I: 73,
+    J: 74,
+    K: 75,
+    L: 76,
+    M: 77,
+    N: 78,
+    O: 79,
+    P: 80,
+    Q: 81,
+    R: 82,
+    S: 83,
+    T: 84,
+    U: 85,
+    V: 86,
+    W: 87,
+    X: 88,
+    Y: 89,
+    Z: 90,
+    CONTEXT_MENU: 93,
+    NUMPAD0: 96,
+    NUMPAD1: 97,
+    NUMPAD2: 98,
+    NUMPAD3: 99,
+    NUMPAD4: 100,
+    NUMPAD5: 101,
+    NUMPAD6: 102,
+    NUMPAD7: 103,
+    NUMPAD8: 104,
+    NUMPAD9: 105,
+    MULTIPLY: 106,
+    ADD: 107,
+    SEPARATOR: 108,
+    SUBTRACT: 109,
+    DECIMAL: 110,
+    DIVIDE: 111,
+    F1: 112,
+    F2: 113,
+    F3: 114,
+    F4: 115,
+    F5: 116,
+    F6: 117,
+    F7: 118,
+    F8: 119,
+    F9: 120,
+    F10: 121,
+    F11: 122,
+    F12: 123,
+    F13: 124,
+    F14: 125,
+    F15: 126,
+    F16: 127,
+    F17: 128,
+    F18: 129,
+    F19: 130,
+    F20: 131,
+    F21: 132,
+    F22: 133,
+    F23: 134,
+    F24: 135,
+    NUM_LOCK: 144,
+    SCROLL_LOCK: 145,
+    COMMA: 188,
+    PERIOD: 190,
+    SLASH: 191,
+    BACK_QUOTE: 192,
+    OPEN_BRACKET: 219,
+    BACK_SLASH: 220,
+    CLOSE_BRACKET: 221,
+    QUOTE: 222,
+    META: 224,
+    // Special Keys
+    UIKEYINPUTUPARROW: 38,
+    UIKEYINPUTDOWNARROW: 40,
+    UIKEYINPUTLEFTARROW: 37,
+    UIKEYINPUTRIGHTARROW: 39,
+    ARROWUP: 38,
+    ARROWDOWN: 40,
+    ARROWLEFT: 37,
+    ARROWRIGHT: 39
+  };
 
   function hitHint(customSelector, customDisposer) {
     // Thanks to https://qiita.com/okayu_tar_gz/items/924481d4acf50be37618
@@ -110,6 +238,7 @@
       var reverseHints = {};
       var numHints = 0;
       var uniqueOnly = true;
+
       function next(hint) {
         var l = hint.length;
         if (l === 0) {
@@ -156,13 +285,13 @@
         style.backgroundColor = "yellow";
         style.color = "black";
         style.fontFamily = "menlo";
-        style.fontSize = "16px";
+        style.fontSize = "13px";
         style.left = `${data.left}px`;
         style.padding = "2px";
         style.position = "fixed";
         style.top = `${data.top}px`;
         style.opacity = 0.8;
-        style.zIndex = "99999";
+        style.zIndex = "9999999";
 
         hintElm.textContent = data.hintCh;
 
@@ -190,7 +319,7 @@
       if (!(e.ctrlKey || e.metaKey || e.shiftKey || e.shiftKey)) {
         e.preventDefault();
 
-        if (e.key === "Escape") {
+        if (e.key === "Escape" || (e.key === "g" && e.ctrlKey)) {
           fin();
         } else {
           input += e.key.toUpperCase();
@@ -204,8 +333,6 @@
           const selectedElms = viewData.filter(data =>
             data.hintCh.startsWith(input)
           );
-
-          log("Selected Elems Length: " + selectedElms.length);
 
           if (selectedElms.length === 0) {
             fin();
@@ -228,269 +355,130 @@
     window.addEventListener("keydown", onkeydown);
   }
 
-  function setupShortcutKeys() {
-    function keyToString(ev) {
-      const modifiers = ["ctrl", "alt", "meta"];
-      const modifierStrings = modifiers.reduce(
-        (modifierStrings, modifier) =>
-          ev[`${modifier}Key`]
-            ? modifierStrings.concat([modifier])
-            : modifierStrings,
-        []
-      );
-      return modifierStrings.concat(ev.key).join("-");
-    }
+  function keyToString(ev) {
+    const modifiers = ["ctrl", "alt", "meta"];
+    const modifierStrings = modifiers.reduce(
+      (modifierStrings, modifier) =>
+        ev[`${modifier}Key`]
+          ? modifierStrings.concat([modifier])
+          : modifierStrings,
+      []
+    );
+    return modifierStrings.concat(ev.key).join("-");
+  }
 
-    function parseKeyString(compositeKeyString) {
-      const keyCodeMap = {
-        CANCEL: 3,
-        HELP: 6,
-        BACK_SPACE: 8,
-        TAB: 9,
-        CLEAR: 12,
-        RETURN: 13,
-        ENTER: 14,
-        SHIFT: 16,
-        CONTROL: 17,
-        ALT: 18,
-        PAUSE: 19,
-        CAPS_LOCK: 20,
-        ESCAPE: 27,
-        SPACE: 32,
-        PAGE_UP: 33,
-        PAGE_DOWN: 34,
-        END: 35,
-        HOME: 36,
-        LEFT: 37,
-        UP: 38,
-        RIGHT: 39,
-        DOWN: 40,
-        PRINTSCREEN: 44,
-        INSERT: 45,
-        DELETE: 46,
-        "0": 48,
-        "1": 49,
-        "2": 50,
-        "3": 51,
-        "4": 52,
-        "5": 53,
-        "6": 54,
-        "7": 55,
-        "8": 56,
-        "9": 57,
-        SEMICOLON: 59,
-        EQUALS: 61,
-        A: 65,
-        B: 66,
-        C: 67,
-        D: 68,
-        E: 69,
-        F: 70,
-        G: 71,
-        H: 72,
-        I: 73,
-        J: 74,
-        K: 75,
-        L: 76,
-        M: 77,
-        N: 78,
-        O: 79,
-        P: 80,
-        Q: 81,
-        R: 82,
-        S: 83,
-        T: 84,
-        U: 85,
-        V: 86,
-        W: 87,
-        X: 88,
-        Y: 89,
-        Z: 90,
-        CONTEXT_MENU: 93,
-        NUMPAD0: 96,
-        NUMPAD1: 97,
-        NUMPAD2: 98,
-        NUMPAD3: 99,
-        NUMPAD4: 100,
-        NUMPAD5: 101,
-        NUMPAD6: 102,
-        NUMPAD7: 103,
-        NUMPAD8: 104,
-        NUMPAD9: 105,
-        MULTIPLY: 106,
-        ADD: 107,
-        SEPARATOR: 108,
-        SUBTRACT: 109,
-        DECIMAL: 110,
-        DIVIDE: 111,
-        F1: 112,
-        F2: 113,
-        F3: 114,
-        F4: 115,
-        F5: 116,
-        F6: 117,
-        F7: 118,
-        F8: 119,
-        F9: 120,
-        F10: 121,
-        F11: 122,
-        F12: 123,
-        F13: 124,
-        F14: 125,
-        F15: 126,
-        F16: 127,
-        F17: 128,
-        F18: 129,
-        F19: 130,
-        F20: 131,
-        F21: 132,
-        F22: 133,
-        F23: 134,
-        F24: 135,
-        NUM_LOCK: 144,
-        SCROLL_LOCK: 145,
-        COMMA: 188,
-        PERIOD: 190,
-        SLASH: 191,
-        BACK_QUOTE: 192,
-        OPEN_BRACKET: 219,
-        BACK_SLASH: 220,
-        CLOSE_BRACKET: 221,
-        QUOTE: 222,
-        META: 224,
-        // Special Keys
-        UIKEYINPUTUPARROW: 38,
-        UIKEYINPUTDOWNARROW: 40,
-        UIKEYINPUTLEFTARROW: 37,
-        UIKEYINPUTRIGHTARROW: 39,
-        ARROWUP: 38,
-        ARROWDOWN: 40,
-        ARROWLEFT: 37,
-        ARROWRIGHT: 39
-      };
+  function parseKeyString(compositeKeyString) {
+    const modifierMapJS = new Map([
+      ["ALT", "withAlt"],
+      ["SHIFT", "withShift"],
+      ["COMMAND", "withMeta"],
+      ["META", "withMeta"],
+      ["CTRL", "withCtrl"]
+    ]);
 
-      const modifierMapJS = new Map([
-        ["ALT", "withAlt"],
-        ["SHIFT", "withShift"],
-        ["COMMAND", "withMeta"],
-        ["CTRL", "withCtrl"]
-      ]);
-
-      function keyStringToKeyCode(keyString) {
-        if (keyCodeMap.hasOwnProperty(keyString)) {
-          return keyCodeMap[keyString];
-        } else {
-          throw new Error("Unknown key: [" + keyString + "]");
-        }
-      }
-
-      return compositeKeyString.split("-").reduce(
-        (key, keyString) => {
-          keyString = keyString.toUpperCase();
-          if (modifierMapJS.has(keyString)) {
-            key[modifierMapJS.get(keyString)] = true;
-          } else {
-            key.key = keyStringToKeyCode(keyString);
-          }
-          return key;
-        },
-        {
-          key: null,
-          withCtrl: false,
-          withShift: false,
-          withAlt: false,
-          withMeta: false
-        }
-      );
-    }
-
-    function inViewMode() {
-      let tag = document.activeElement.tagName;
-      // TODO: Check if "contentEditable" attribute is on
-      return tag !== "TEXTAREA" && tag !== "INPUT";
-    }
-
-    const shortcutKeyHandler = keyEvent => {
-      if (gHitHintDisposerInternal) {
-        // Hit-Hint mode. Ignore.
-        return;
-      }
-
-      if (keyEvent.__keepMark__) {
-        return;
-      }
-
-      let mode = null;
-      if (inViewMode()) {
-        log("View Mode");
-        mode = "view";
-      } else if (document.activeElement === gRichTextEditorInputElement) {
-        mode = "rich";
-        log("Rich Edit Mode");
+    function keyStringToKeyCode(keyString) {
+      if (keyCodeMap.hasOwnProperty(keyString)) {
+        return keyCodeMap[keyString];
       } else {
-        mode = "edit";
-        log("Normal Edit Mode");
+        throw new Error("Unknown key: [" + keyString + "]");
       }
+    }
 
-      let keepMark = false;
-      if (mode) {
-        const keyString = keyToString(keyEvent);
-        log(keyString);
-        let keyMap = gLocalKeyMap[mode];
-        if (keyMap.hasOwnProperty(keyString)) {
-          keyEvent.stopPropagation();
-          keyEvent.preventDefault();
-
-          let command = keyMap[keyString];
-
-          // `key: XXX` is abbreviation of `key: { command: XXX, marked: false }`
-          if (command.command) {
-            keepMark = !!command.marked;
-            command = command.command;
-          }
-
-          if (typeof command === "function") {
-            // Exec function
-            command();
-          } else {
-            log(
-              command +
-                " / keepMark: " +
-                keepMark +
-                " / marked: " +
-                gStatusMarked
-            );
-            // Key remapping
-            let eventInfo = parseKeyString(command);
-            jsbox.dispatchKeydown(
-              eventInfo.key,
-              eventInfo.withShift,
-              eventInfo.withCtrl,
-              eventInfo.withAlt,
-              eventInfo.withCommand,
-              (keepMark = keepMark)
-            );
-          }
+    return compositeKeyString.split("-").reduce(
+      (key, keyString) => {
+        keyString = keyString.toUpperCase();
+        if (modifierMapJS.has(keyString)) {
+          key[modifierMapJS.get(keyString)] = true;
+        } else {
+          key.key = keyStringToKeyCode(keyString);
         }
-      }
-      if (!keepMark) {
-        // Reset mark
-        gStatusMarked = false;
-      }
-    };
-
-    window.addEventListener(
-      "keydown",
-      ev => {
-        try {
-          shortcutKeyHandler(ev);
-        } catch (x) {
-          log("Error in shortcutKeyHandler: " + x);
-        }
+        return key;
       },
-      true
+      {
+        key: null,
+        withCtrl: false,
+        withShift: false,
+        withAlt: false,
+        withMeta: false
+      }
     );
   }
+
+  function inEditorLikeMode() {
+    let elem = document.activeElement;
+    let tag = elem.tagName;
+    // TODO: Check if "contentEditable" attribute is on
+    return (
+      tag === "TEXTAREA" ||
+      tag === "INPUT" ||
+      elem === gRichTextEditorInputElement
+    );
+  }
+
+  const shortcutKeyHandler = keyEvent => {
+    if (gHitHintDisposerInternal) {
+      // Hit-Hint mode. Ignore.
+      return;
+    }
+
+    if (keyEvent.__keepMark__) {
+      return;
+    }
+
+    let mode = null;
+    if (!inEditorLikeMode()) {
+      mode = "view";
+      log("View Mode");
+    } else if (document.activeElement === gRichTextEditorInputElement) {
+      mode = "rich";
+      log("Rich Edit Mode");
+    } else {
+      mode = "edit";
+      log("Normal Edit Mode");
+    }
+
+    let keepMark = false;
+    if (mode) {
+      const keyString = keyToString(keyEvent);
+      let keyMap = gLocalKeyMap[mode];
+      if (keyMap.hasOwnProperty(keyString)) {
+        keyEvent.stopPropagation();
+        keyEvent.preventDefault();
+
+        let command = keyMap[keyString];
+
+        // `key: XXX` is abbreviation of `key: { command: XXX, marked: false }`
+        if (command.command) {
+          keepMark = !!command.marked;
+          command = command.command;
+        }
+
+        if (typeof command === "function") {
+          // Exec function
+          command();
+        } else {
+          // log(
+          //   command + " / keepMark: " + keepMark + " / marked: " + gStatusMarked
+          // );
+          // Key remapping
+          let eventInfo = parseKeyString(command);
+          // log("Now dispatch " + JSON.stringify(eventInfo, null, 2));
+          jsbox.dispatchKeydown(
+            eventInfo.key,
+            eventInfo.withShift,
+            eventInfo.withCtrl,
+            eventInfo.withAlt,
+            eventInfo.withCommand,
+            (keepMark = keepMark)
+          );
+        }
+      }
+    }
+    if (!keepMark) {
+      // Reset mark
+      gStatusMarked = false;
+    }
+  };
 
   function setupInCompositionHandler(editorElement, dispatcher) {
     // Ctr+h should be handled separately.
@@ -582,7 +570,6 @@
     if (document.querySelector(".CodeMirror")) {
       log("Code mirror Initialized.");
       initializeCodeMirror();
-      return;
     } else if (
       location.host === "scrapbox.io" &&
       document.getElementById("text-input")
@@ -590,7 +577,6 @@
       // Scrapbox
       log("Scrapbox Initialized.");
       initializeScrapbox();
-      return;
     } else if (
       window._debug_editors &&
       document.querySelector(".file-tree ul.file-tree-list") &&
@@ -600,23 +586,34 @@
       // See https://www.overleaf.com/learn/how-to/How_can_I_define_custom_Vim_macros_in_a_vimrc_file_on_Overleaf%3F
       initializeOverleaf();
       log("Overleaf initialized");
-      return;
     } else if (document.querySelector(".editor__inner")) {
       gRichTextEditorInputElement = document.querySelector(".editor__inner");
-      return;
+    } else if (document.querySelector(".docs-texteventtarget-iframe")) {
+      gRichTextEditorInputElement = document.querySelector(
+        ".docs-texteventtarget-iframe"
+      );
+      gGoogleDocsEditor = gRichTextEditorInputElement.contentWindow.document.querySelector(
+        '[contenteditable="true"]'
+      );
+      gGoogleDocsEditor.addEventListener(
+        "keydown",
+        ev => shortcutKeyHandler(ev),
+        true
+      );
+    } else {
+      trialTimes++;
+      if (trialTimes < 10) {
+        setTimeout(() => {
+          initializeRichTextEditor(trialTimes);
+        }, 500);
+        return;
+      }
     }
-
-    trialTimes++;
-    if (trialTimes > 10) {
-      return;
-    }
-    setTimeout(() => {
-      initializeRichTextEditor(trialTimes);
-    }, 500);
   }
 
   function getKeyEventReceiver() {
-    let element = document.activeElement || document.documentElement;
+    let element =
+      gGoogleDocsEditor || document.activeElement || document.documentElement;
     return element;
   }
 
@@ -632,7 +629,6 @@
       withCommand = false,
       keepMark = false
     ) {
-      log(`${keyCode}`);
       let ev = document.createEvent("Event");
       ev.initEvent("keydown", true, true);
       ev.__keepMark__ = keepMark;
@@ -645,6 +641,9 @@
       ev.ctrlKey = withCtrl;
       ev.altKey = withAlt;
       ev.metaKey = withCommand;
+
+      // log(`Dispatch ${keyEventToString(ev)}`);
+
       getKeyEventReceiver().dispatchEvent(ev);
     },
     get hitHintDisposer() {
@@ -676,6 +675,10 @@
         gAceEditor.insert(text);
       } else if (gCodeMirror) {
         gCodeMirror.replaceSelection(text);
+      } else if (document.activeElement.contentWindow) {
+        let doc = document;
+        doc = document.activeElement.contentWindow.document;
+        doc.execCommand("insertText", false, text);
       } else {
         document.execCommand("insertText", false, text);
       }
@@ -736,7 +739,9 @@
     },
     focusEditor: function() {
       // insert mode
-      if (gRichTextEditorInputElement) {
+      if (gGoogleDocsEditor) {
+        gGoogleDocsEditor.focus();
+      } else if (gRichTextEditorInputElement) {
         gRichTextEditorInputElement.focus();
       } else {
         jsbox.focusFirstInput();
@@ -781,19 +786,20 @@
         popup.setAttribute(
           "style",
           `
-        display: block;
-        position: fixed;
-        top: 10%;
-        left: 10%;
-        padding: 1em;
-        width: 80%;
-        height: 80%;
-        background: black;
-        font-size: large;
-        opacity: 0.9;
-        border: 1px solid black; 
-        border-radius: 1ex;
-        z-index: 99998;
+        display: block !important;
+        font-family: monospace !important;
+        position: fixed !important;
+        top: 10% !important;
+        left: 10% !important;
+        padding: 1em !important;
+        width: 80% !important;
+        height: 80% !important;
+        background: black !important;
+        font-size: 15px !important;
+        opacity: 0.9 !important;
+        border: 1px solid black !important; 
+        border-radius: 1ex !important;
+        z-index: 99990  !important;
         `
         );
         sites.forEach(site => {
@@ -801,7 +807,12 @@
           link.setAttribute("href", site.url);
           link.setAttribute(
             "style",
-            "display: block; color: white; padding: 0.5em 2em; border-bottom: 1px solid white; "
+            `
+            display: block !important;
+            color: white !important;
+            padding: 0.5em 2em !important;
+            border-bottom: 1px solid white !important;
+            `
           );
           link.textContent = site.alias + " (" + site.url + ")";
           popup.appendChild(link);
@@ -821,6 +832,16 @@
   /*@preserve SETTINGS_HERE*/
 
   initializeRichTextEditor(0);
-  setupShortcutKeys();
+  window.addEventListener(
+    "keydown",
+    ev => {
+      try {
+        shortcutKeyHandler(ev);
+      } catch (x) {
+        log("Error in shortcutKeyHandler: " + x);
+      }
+    },
+    true
+  );
   onLocationChange();
 })();
