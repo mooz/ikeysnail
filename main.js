@@ -36,7 +36,7 @@ async function showMenu() {
   let targetSites = sites;
   let clipboardText = $clipboard.text;
   if (clipboardText && /^https?:\/\//.test(clipboardText)) {
-    targetSites = targetSites.concat([[clipboardText, null, "📋"]]);
+    targetSites = targetSites.concat([{ url: clipboardText, alias: "📋"}]);
   }
   const chosen = await $ui.menu({
     items: targetSites.map(site => site.alias + " (" + site.url + ")")
