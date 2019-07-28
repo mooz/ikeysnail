@@ -2,7 +2,9 @@
     let beginTime = Date.now();
 
     function log(message) {
-        $notify("log", {message});
+        if (config.DEBUG_CONSOLE) {
+            $notify("log", {message});
+        }
     }
 
     function message(msg, duration) {
@@ -965,7 +967,6 @@
         },
         copyRegion: () => {
             const text = keysnail.getSelectedText();
-            keysnail.dispatchKey("Backspace");
             $notify("copyText", {text});
             message("Copied!", 1);
         },

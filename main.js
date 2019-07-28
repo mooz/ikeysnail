@@ -1,8 +1,8 @@
 const config = {sites: []};
 require("./strings/settings").setup(config, {marked: () => null});
 
-const VERTICAL = config.CONF_TAB_VERTICAL;
-const VERTICAL_TAB_WIDTH = config.CONF_TAB_VERTICAL_WIDTH;
+const VERTICAL = config.TAB_VERTICAL;
+const VERTICAL_TAB_WIDTH = config.TAB_VERTICAL_WIDTH;
 const TOPBAR_HEIGHT = 35;
 const TAB_HEIGHT = 30;
 const TAB_FONT_SIZE = 13;
@@ -12,6 +12,13 @@ const TAB_FG_SELECTED = "#000000";
 const TAB_BG_INACTIVE = "#cccccc";
 const TAB_LIST_BG = "#bbbbbb";
 const TAB_FG_INACTIVE = "#666666";
+const URL_COLOR = "#2B9E46";
+
+function log(message) {
+    if (config.DEBUG_CONSOLE) {
+        console.log(message);
+    }
+}
 
 function evalScript(tab, contentScript, promisify = true) {
     if (promisify) {
@@ -67,7 +74,7 @@ function readUserScript() {
 function createWidgetTabContent(tab, url, userScript) {
     let props = {
         id: tab.id,
-        ua: config.CONF_USER_AGENT,
+        ua: config.USER_AGENT,
         script: userScript,
         hidden: false,
         url: url
@@ -78,7 +85,9 @@ function createWidgetTabContent(tab, url, userScript) {
         props: props,
         events: {
             log: ({message}) => {
-                console.log(message);
+                if (config.DEBUG_CONSOLE) {
+                    log(message);
+                }
             },
             titleDetermined: ({title}) => {
                 tab.title = title;
@@ -209,7 +218,7 @@ function createWidgetURLInput(browser) {
         type: "input",
         props: {
             id: "url-input",
-            textColor: $rgba(60, 200, 85, 1),
+            textColor: $color(URL_COLOR),
             align: $align.center
         },
         layout: (make, view) => {
@@ -229,14 +238,13 @@ function createWidgetURLInput(browser) {
             },
             didEndEditing: sender => {
                 sender.align = $align.center;
-                sender.textColor = $rgba(60, 200, 85, 1);
+                sender.textColor = $color(URL_COLOR);
                 if (originalURL !== sender.text) {
                     try {
                         browser.visitURL(sender.text);
                     } catch (x) {
                         alert(x);
                     }
-
                 }
             }
         }
@@ -286,7 +294,7 @@ function createWidgetTabList(browser) {
                     id: "close-button",
                     icon: $icon(
                         "225",
-                        $rgba(140, 140, 140, 1),
+                        $rgba(140, 140, 140, 0.8),
                         $size(TAB_CLOSE_BUTTON_SIZE, TAB_CLOSE_BUTTON_SIZE)
                     ),
                     bgcolor: $color("clear")
@@ -297,8 +305,8 @@ function createWidgetTabList(browser) {
                     }
                 },
                 layout: (make, view) => {
-                    make.top.inset(5);
                     make.left.equalTo(view.super.left).offset(5);
+                    make.top.inset(5);
                 }
             }
         ]
@@ -334,7 +342,6 @@ function createWidgetTabList(browser) {
             type: "list",
             events: {
                 didSelect: (sender, indexPath) => {
-                    console.log(indexPath);
                     browser.selectTab(indexPath.row);
                 }
             },
@@ -439,7 +446,7 @@ class Tab {
     }
 
     visitURL(url) {
-        console.log("Visit " + url);
+        log("Visit " + url);
         this.element.url = url;
     }
 
@@ -475,8 +482,8 @@ class TabBrowser {
             props: {
                 id: "browser-container",
                 title: "iKeySnail",
-                statusBarHidden: config.CONF_HIDE_STATUSBAR,
-                navBarHidden: config.CONF_HIDE_TOOLBAR,
+                statusBarHidden: config.HIDE_STATUSBAR,
+                navBarHidden: config.HIDE_TOOLBAR,
                 keyCommands: generateKeyCommands(keymap),
                 bgcolor: $rgba(250, 250, 250, 0.9),
             },
@@ -552,7 +559,7 @@ ${tab.url}
      */
     closeTab(tab) {
         if (this.tabs.length <= 1) {
-            this.tabs[0].visitURL(config.CONF_NEW_PAGE_URL);
+            this.tabs[0].visitURL(config.NEW_PAGE_URL);
         } else {
             tab.visitURL(null); // Expect early GC
             let index = this.tabs.indexOf(tab);
@@ -571,7 +578,7 @@ ${tab.url}
      */
     createNewTab(url, selectNewTab = false) {
         if (!url) {
-            url = config.CONF_NEW_PAGE_URL;
+            url = config.NEW_PAGE_URL;
         }
         let tab = new Tab(this, url, this.userScript);
         this._appendElementToView(tab.elementSource);
@@ -618,7 +625,7 @@ ${tab.url}
                     element.remove();
                 }
             } catch (x) {
-                console.log("Error in removing tab list: " + x);
+                log("Error in removing tab list: " + x);
             }
         }
 
@@ -665,7 +672,7 @@ function startSession(urlToVisit) {
 
     let browser = new TabBrowser(readUserScript(), () => {
         if (lastTabs.length) {
-            console.log(JSON.stringify(lastTabs, null, 2));
+            log(JSON.stringify(lastTabs, null, 2));
             lastTabs.forEach(url => {
                 let tab = new Tab(browser, url, browser.userScript);
                 browser._appendElementToView(tab.elementSource);
@@ -690,7 +697,7 @@ function startSession(urlToVisit) {
                 }
             });
 
-            if (config.CONF_CAPTURE_CTRL_SPACE) {
+            if (config.CAPTURE_CTRL_SPACE) {
                 let ctrlKey = false;
                 // Workaround for capturing Ctrl-Space
                 $define({
@@ -728,7 +735,7 @@ function startSession(urlToVisit) {
         exit: () => {
             try {
                 $objc("RedBoxCore").$cleanClass("UIResponder");
-                if (config.CONF_CAPTURE_CTRL_SPACE) {
+                if (config.CAPTURE_CTRL_SPACE) {
                     $objc("RedBoxCore").$cleanClass("WKWebView");
                     // $objc("RedBoxCore").$cleanClass("UIApplication");
                 }

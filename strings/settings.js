@@ -1,13 +1,16 @@
 const setup = (config, keysnail) => {
     config.DEBUG_SHOW_INPUT_KEY = false;
     config.DEBUG_SHOW_DISPATCH_KEY = false;
+    config.DEBUG_CONSOLE = true;
 
-    config.CONF_TAB_VERTICAL = false;
-    config.CONF_CAPTURE_CTRL_SPACE = true;
-    config.CONF_HIDE_STATUSBAR = true;
-    config.CONF_HIDE_TOOLBAR = true;
-    config.CONF_NEW_PAGE_URL = "https://www.google.com/";
-    config.CONF_USER_AGENT =
+    config.TAB_VERTICAL = true;
+    config.TAB_VERTICAL_WIDTH = 200;
+
+    config.CAPTURE_CTRL_SPACE = true;
+    config.HIDE_STATUSBAR = true;
+    config.HIDE_TOOLBAR = true;
+    config.NEW_PAGE_URL = "https://www.google.com/";
+    config.USER_AGENT =
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0 Safari/605.1.15";
 
     // See
