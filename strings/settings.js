@@ -3,7 +3,7 @@ const setup = (config, keysnail) => {
   config.DEBUG_SHOW_DISPATCH_KEY = false;
   config.DEBUG_SHOW_MESSAGE = false;
 
-  config.TAB_VERTICAL = true;
+  config.TAB_VERTICAL = false;
   config.TAB_VERTICAL_WIDTH = 200;
 
   config.CAPTURE_CTRL_SPACE = true;
