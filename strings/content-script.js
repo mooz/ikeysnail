@@ -270,7 +270,7 @@
   }
   // a ~ z
   for (let i = 0; i < 26; ++i) {
-    keyToKeyCode[String.fromCharCode(97 + i)] = 97 + i;
+    keyToKeyCode[String.fromCharCode(97 + i)] = 65 + i;
   }
   // F1 ~ F24
   for (let i = 1; i <= 24; ++i) {
