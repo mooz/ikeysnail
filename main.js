@@ -1,8 +1,8 @@
 const config = {sites: []};
-require("./strings/settings").setup(config, { marked: () => null });
+require("./strings/settings").setup(config, {marked: () => null});
 
 const VERTICAL = config.CONF_TAB_VERTICAL;
-const VERTICAL_TAB_WIDTH = 150;
+const VERTICAL_TAB_WIDTH = config.CONF_TAB_VERTICAL_WIDTH;
 const TOPBAR_HEIGHT = 35;
 const TAB_HEIGHT = 30;
 const TAB_FONT_SIZE = 13;
@@ -10,7 +10,28 @@ const TAB_CLOSE_BUTTON_SIZE = 20;
 const TAB_BG_SELECTED = "#efefef";
 const TAB_FG_SELECTED = "#000000";
 const TAB_BG_INACTIVE = "#cccccc";
+const TAB_LIST_BG = "#bbbbbb";
 const TAB_FG_INACTIVE = "#666666";
+
+function evalScript(tab, contentScript, promisify = true) {
+    if (promisify) {
+        return new Promise((resolve, reject) => {
+            tab.element.eval({
+                script: contentScript,
+                handler: (result, err) => {
+                    if (err || typeof result === "object") {
+                        reject(err);
+                    } else {
+                        resolve(result);
+                    }
+                }
+            });
+        });
+    } else {
+        tab.element.eval({script: contentScript});
+        return null;
+    }
+}
 
 function readMinified(prefix) {
     if ($file.exists(prefix + ".min.js")) {
@@ -44,8 +65,6 @@ function readUserScript() {
 }
 
 function createWidgetTabContent(tab, url, userScript) {
-    const {evalScript, dispatchKeys} = require("./scripts/system-remap");
-
     let props = {
         id: tab.id,
         ua: config.CONF_USER_AGENT,
@@ -88,9 +107,9 @@ function createWidgetTabContent(tab, url, userScript) {
                 $ui.toast(message, duration || 3);
             },
             paste: () => {
-              evalScript(tab,
-                  `__keysnail__.insertText('${escape($clipboard.text)}', true)`,
-                  false);
+                evalScript(tab,
+                    `__keysnail__.insertText('${escape($clipboard.text)}', true)`,
+                    false);
             },
             closeTab: () => {
                 tab.parent.closeTab(tab);
@@ -111,7 +130,6 @@ function createWidgetTabContent(tab, url, userScript) {
                 $clipboard.set({type: "public.plain-text", value: text});
             },
         },
-
         layout: (make, view) => {
             if (VERTICAL) {
                 make.edges.equalTo(view.super).insets($insets(TOPBAR_HEIGHT, VERTICAL_TAB_WIDTH, 0, 0));
@@ -287,11 +305,6 @@ function createWidgetTabList(browser) {
     };
 
     const data = tabNames.map((name, index) => {
-        let TAB_BG_SELECTED = "#efefef";
-        let TAB_FG_SELECTED = "#000000";
-        let TAB_BG_INACTIVE = "#cccccc";
-        let TAB_FG_INACTIVE = "#666666";
-
         if (index === browser.currentTabIndex) {
             return {
                 "tab-name": {
@@ -330,11 +343,14 @@ function createWidgetTabList(browser) {
                 rowHeight: TAB_HEIGHT,
                 // spacing: 0,
                 template: tabTemplate,
-                data: data
+                data: data,
+                bgcolor: $color(TAB_LIST_BG),
+                borderWidth: 1,
+                borderColor: $color(TAB_FG_INACTIVE)
             },
             layout: (make, view) => {
-                make.width.equalTo($size(VERTICAL_TAB_WIDTH));
-                make.height.equalTo(view.super.height).offset(-(TAB_HEIGHT + TOPBAR_HEIGHT));
+                make.width.equalTo(VERTICAL_TAB_WIDTH);
+                make.height.equalTo(view.super.height).offset(-TOPBAR_HEIGHT);
                 make.top.equalTo(TOPBAR_HEIGHT);
                 make.left.equalTo(0);
             }
@@ -357,8 +373,8 @@ function createWidgetTabList(browser) {
             },
             layout: (make, view) => {
                 make.width.equalTo(view.super.width);
-                make.height.equalTo($size(TAB_HEIGHT));
-                make.top.equalTo($size(TOPBAR_HEIGHT));
+                make.height.equalTo(TAB_HEIGHT);
+                make.top.equalTo(TOPBAR_HEIGHT);
                 make.left.equalTo(0);
             }
         };
@@ -388,7 +404,7 @@ class Tab {
     }
 
     focus() {
-       // https://github.com/WebKit/webkit/blob/39a299616172a4d4fe1f7aaf573b41020a1d7358/Source/WebKit/UIProcess/API/Cocoa/WKWebView.mm#L1318
+        // https://github.com/WebKit/webkit/blob/39a299616172a4d4fe1f7aaf573b41020a1d7358/Source/WebKit/UIProcess/API/Cocoa/WKWebView.mm#L1318
         let webView = this.element.runtimeValue();
         webView.$becomeFirstResponder();
         webView.$setAllowsBackForwardNavigationGestures(true);
@@ -419,7 +435,6 @@ class Tab {
     }
 
     showBookmark() {
-        const {evalScript} = require("./scripts/system-remap");
         evalScript(this, "__keysnail__.startSiteSelector(true)");
     }
 
@@ -429,7 +444,6 @@ class Tab {
     }
 
     dispatchCtrlSpace() {
-        const {evalScript} = require("./scripts/system-remap");
         evalScript(this, `__keysnail__.dispatchKey("ctrl- ", false, true)`);
     }
 }
@@ -723,7 +737,6 @@ function startSession(urlToVisit) {
             }
             saveTabInfo(browser);
         }
-
     });
 }
 
