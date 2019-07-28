@@ -1,7 +1,5 @@
 const userAgentMac = `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0 Safari/605.1.15 JSBox`;
 
-const userAgentOriginal = null;
-
 const keyCodeMap = {
   CANCEL: 3,
   HELP: 6,
@@ -140,6 +138,5 @@ const charCodeMap = {
 module.exports = {
   keyCodeMap,
   charCodeMap,
-  userAgentMac,
-  userAgentOriginal
+  userAgentMac
 };

@@ -81,27 +81,31 @@ function keyStringToDispatchScript(toKeys, keepMark = false) {
     .map(compositeKeyString => {
       const key = toJSKey(compositeKeyString);
       if (key.press) {
-        return `jsbox.dispatchKeypress(${key.key}, ${key.shiftKey}, ${key.ctrlKey}, ${key.altKey}, ${key.metaKey}, keepMark=${keepMark});`;
+        return `jsbox.dispatchKeypress(${key.key}, ${key.shiftKey}, ${
+          key.ctrlKey
+        }, ${key.altKey}, ${key.metaKey}, keepMark=${keepMark});`;
       } else {
-        return `jsbox.dispatchKeydown(${key.key}, ${key.shiftKey}, ${key.ctrlKey}, ${key.altKey}, ${key.metaKey}, keepMark=${keepMark});`;
+        return `jsbox.dispatchKeydown(${key.key}, ${key.shiftKey}, ${
+          key.ctrlKey
+        }, ${key.altKey}, ${key.metaKey}, keepMark=${keepMark});`;
       }
     })
     .join("\n");
 }
 
-function dispatchKeys(keys, promisify = false, keepMark = false) {
+function dispatchKeys(tab, keys, promisify = false, keepMark = false) {
   if (typeof keys === "string") {
     keys = [keys];
   }
   const contentScript = keyStringToDispatchScript(keys, keepMark);
-  return evalScript(contentScript, promisify);
+  return evalScript(tab, contentScript, promisify);
 }
 
-function evalScript(contentScript, promisify = true) {
+function evalScript(tab, contentScript, promisify = true) {
   // console.log(contentScript);
   if (promisify) {
     return new Promise((resolve, reject) => {
-      $("webView").eval({
+      tab.element.eval({
         script: contentScript,
         handler: (result, err) => {
           if (err || typeof result === "object") {
@@ -113,7 +117,7 @@ function evalScript(contentScript, promisify = true) {
       });
     });
   } else {
-    $("webView").eval({ script: contentScript });
+    tab.element.eval({ script: contentScript });
     return null;
   }
 }
