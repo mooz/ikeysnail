@@ -153,6 +153,10 @@ const setup = (config, keysnail) => {
       rich: {
         "meta-f": keysnail.marked("alt-ArrowRight"),
         "meta-b": keysnail.marked("alt-ArrowLeft"),
+        "meta-d": () => {
+          keysnail.dispatchKey("alt-shift-ArrowRight");
+          keysnail.dispatchKey("Backspace");
+        },
         "ctrl-i": "ctrl-i",
         "ctrl-t": "ctrl-t"
       }
