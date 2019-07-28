@@ -1,7 +1,7 @@
 const setup = (config, keysnail) => {
-  config.DEBUG_SHOW_INPUT_KEY = true;
+  config.DEBUG_SHOW_INPUT_KEY = false;
   config.DEBUG_SHOW_DISPATCH_KEY = false;
-  config.DEBUG_SHOW_MESSAGE = true;
+  config.DEBUG_SHOW_MESSAGE = false;
 
   config.TAB_VERTICAL = true;
   config.TAB_VERTICAL_WIDTH = 200;
