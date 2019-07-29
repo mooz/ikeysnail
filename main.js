@@ -146,6 +146,17 @@ function createWidgetTabContent(tab, url, userScript) {
             copyText: ({text}) => {
                 $clipboard.set({type: "public.plain-text", value: text});
             },
+            openClipboardURL: async () => {
+                let url = await evalScript(
+                    tab,
+                    `__keysnail__.getSelectedText()`
+                );
+                if (!url) {
+                    url = $clipboard.text;
+                }
+                url = understandURLikeInput(url);
+                tab.parent.createNewTab(url, true);
+            },
         },
         layout: (make, view) => {
             if (VERTICAL) {

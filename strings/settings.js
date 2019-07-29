@@ -29,6 +29,7 @@ const setup = (config, keysnail) => {
       "ctrl-l": () => $notify("focusLocationBar"),
       "meta-t": () => $notify("createNewTab"),
       "ctrl-t": () => $notify("createNewTab")
+      "ctrl-meta-g": () => $notify("openClipboardURL"),
     },
     rich: {
       "ctrl-g": () => keysnail.escape(),
@@ -85,6 +86,7 @@ const setup = (config, keysnail) => {
       e: () => keysnail.toggleHitHint(),
       Escape: () => keysnail.escape(),
       "ctrl-g": () => keysnail.escape(),
+      y: () => $notify("openClipboardURL"),
       r: () => location.reload(),
       i: () => keysnail.focusEditor(),
       j: () => keysnail.scrollDown(),
