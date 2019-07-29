@@ -29,7 +29,7 @@ const setup = (config, keysnail) => {
       "ctrl-l": () => $notify("focusLocationBar"),
       "meta-t": () => $notify("createNewTab"),
       "ctrl-t": () => $notify("createNewTab"),
-      "ctrl-meta-g": () => $notify("openClipboardURL"),
+      "ctrl-meta-g": () => $notify("openClipboardURL")
     },
     rich: {
       "ctrl-g": () => keysnail.escape(),
