@@ -614,8 +614,9 @@
     match(queries, candidate) {
       if (this._matchType === "and") {
         let text = candidate.textContent.toLowerCase();
+        let url = (candidate.href || "").toLowerCase();
         for (let query of queries) {
-          if (text.indexOf(query) < 0) {
+          if (text.indexOf(query) < 0 && text.indexOf(url)) {
             return false;
           }
         }
@@ -634,13 +635,24 @@
       }
     }
 
+    get allCandidates() {
+      return Array.from(this.candidateList.childNodes);
+    }
+
     action(index) {
-      // TODO: make action customizable
       let candidate = this._filteredCandidates[index];
-      candidate.focus();
-      clickElement(candidate);
-      message("Visiting: " + candidate.textContent);
-      this.exit();
+      try {
+        if (this._action) {
+          let originalIndex = this.allCandidates.indexOf(candidate);
+          this._action(originalIndex, candidate);
+        } else {
+          candidate.focus();
+          clickElement(candidate);
+          message("Visiting: " + candidate.textContent);
+        }
+      } finally {
+        this.exit();
+      }
     }
 
     _filterCandidatesByQuery(query) {
@@ -721,6 +733,13 @@
 
     run(candidates, options) {
       options = options || {};
+      if (this.running) {
+        this.exit();
+        if (options.toggle) {
+          return;
+        }
+      }
+      this._action = options.action || null;
       this._setCandidates(candidates);
       this.hintMode = !!options.hints;
       this.show();
@@ -731,6 +750,9 @@
       } else {
         this.queryInput.value = options.query || "";
         this._filterCandidatesByQuery(this.queryInput.value);
+        if (options.initialIndex) {
+          this._selectCandidateByIndex(options.initialIndex);
+        }
         this.queryInput.focus();
 
         const disposer = () => {
