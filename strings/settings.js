@@ -28,7 +28,7 @@ const setup = (config, keysnail) => {
       "meta-l": () => $notify("focusLocationBar"),
       "ctrl-l": () => $notify("focusLocationBar"),
       "meta-t": () => $notify("createNewTab"),
-      "ctrl-t": () => $notify("createNewTab")
+      "ctrl-t": () => $notify("createNewTab"),
       "ctrl-meta-g": () => $notify("openClipboardURL"),
     },
     rich: {
