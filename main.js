@@ -760,6 +760,9 @@ function startSession(urlToVisit) {
         }
         browser._appendElementToView(tab.elementSource);
         browser.tabs.push(tab);
+        if (!config.TAB_LAZY_LOADING) {
+          tab.load();
+        }
       });
       browser.selectTab(lastTabIndex);
     } else {
