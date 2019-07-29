@@ -628,7 +628,8 @@ ${tab.url}
         this.createNewTab(
             `https://scrapbox.io/stillpedant/${encodeURIComponent(
                 tab.title
-            )}?body=${encodeURIComponent(content)}`
+            )}?body=${encodeURIComponent(content)}`,
+            true
         );
     }
 
