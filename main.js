@@ -49,7 +49,13 @@ function readMinified(prefix) {
 }
 
 function loadTabInfo() {
-  return JSON.parse($file.read("last-tabs.json").string.trim());
+  try {
+    let [tabURLs, tabIndex, tabNames] = JSON.parse($file.read("last-tabs.json").string.trim());
+    if (tabURLs.length !== tabNames.length) throw "Invalid";
+    return [tabURLs, tabIndex, tabNames];
+  } catch (x) {
+    return [[], 0, []];
+  }
 }
 
 function saveTabInfo(browser) {
@@ -744,7 +750,8 @@ function startSession(urlToVisit) {
   let lastTabIndex = 0;
   let tabTitles = null;
   try {
-    let [tabUrls, lastTabIndex, tabTitles] = loadTabInfo();
+    let [tabUrls, tabIndex, tabTitles] = loadTabInfo();
+    lastTabIndex = tabIndex;
     tabTitles = tabTitles || [];
     for (let i = 0; i < tabUrls.length; ++i) {
       lastTabs.push({ url: tabUrls[i], title: tabTitles[i] });
