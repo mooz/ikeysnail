@@ -861,14 +861,18 @@
       getKeyEventReceiver().dispatchEvent(dclEvent);
     },
     getSelectedText: function() {
-      if (gAceEditor) {
-        return gAceEditor.getSelectedText();
-      } else if (gCodeMirror) {
-        return gCodeMirror.getSelection();
-      } else {
-        let selection = window.getSelection();
-        return selection + "";
-      }
+      let text = (function() {
+        if (gAceEditor) {
+          return gAceEditor.getSelectedText();
+        } else if (gCodeMirror) {
+          return gCodeMirror.getSelection();
+        } else if (document.activeElement.contentWindow) {
+          return document.activeElement.contentWindow.getSelection() + "";
+        } else {
+          return window.getSelection() + "";
+        }
+      })();
+      return text;
     },
     insertText: function(text, escaped = false) {
       if (escaped) {
