@@ -159,7 +159,7 @@ function createWidgetTabContent(tab, url, userScript) {
         if (!url) {
           url = $clipboard.text;
         }
-        url = understandURLikeInput(url);
+        url = understandURLLikeInput(url);
         tab.parent.createNewTab(url, true);
       },
       selectTabsByPanel: () => {
