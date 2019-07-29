@@ -157,12 +157,36 @@ function createWidgetTabContent(tab, url, userScript) {
                 url = understandURLikeInput(url);
                 tab.parent.createNewTab(url, true);
             },
+            selectTabsByPanel: () => {
+                let candidates = tab.parent.tabs.map((tab, index) => ({
+                    text: tab.title,
+                    url: tab.url
+                }));
+                let initialIndex = tab.parent.tabs.indexOf(tab);
+                evalScript(
+                    tab,
+                    `
+__keysnail__.runPanel(${JSON.stringify(candidates)}, {
+  toggle: true,
+  initialIndex: ${initialIndex},
+  action: index => $notify("selectTabByIndex", { index })
+});
+        `
+                );
+            },
+            selectTabByIndex: ({ index }) => {
+                tab.parent.selectTab(index);
+            }
         },
         layout: (make, view) => {
             if (VERTICAL) {
-                make.edges.equalTo(view.super).insets($insets(TOPBAR_HEIGHT, VERTICAL_TAB_WIDTH, 0, 0));
+                make.edges
+                    .equalTo(view.super)
+                    .insets($insets(TOPBAR_HEIGHT, VERTICAL_TAB_WIDTH, 0, 0));
             } else {
-                make.edges.equalTo(view.super).insets($insets(TOPBAR_HEIGHT + TAB_HEIGHT, 0, 0, 0));
+                make.edges
+                    .equalTo(view.super)
+                    .insets($insets(TOPBAR_HEIGHT + TAB_HEIGHT, 0, 0, 0));
             }
         }
     };

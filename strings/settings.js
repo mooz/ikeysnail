@@ -83,6 +83,7 @@ const setup = (config, keysnail) => {
     view: {
       d: () => $notify("closeTab"),
       o: () => keysnail.startSiteSelector(),
+      "ctrl-a": () => $notify("selectTabsByPanel"),
       e: () => keysnail.toggleHitHint(),
       Escape: () => keysnail.escape(),
       "ctrl-g": () => keysnail.escape(),
