@@ -742,20 +742,12 @@
     }
   }
 
-  let gPanel = new Panel();
-
-  function selectBookmarks(noHints) {
-    noHints = true;
-
-    if (gPanel.running) {
-      gPanel.exit();
-    } else {
-      let candidates = config.sites.map(site => ({
-        text: `📖  ${site.alias} (${site.url})`,
-        url: site.url
-      }));
-      gPanel.run(candidates, { hints: !noHints });
+  let gPanel = null;
+  function getPanel() {
+    if (!gPanel) {
+      gPanel = new Panel();
     }
+    return gPanel;
   }
 
   var keysnail = {
@@ -977,7 +969,17 @@
       message("Copied!", 1);
     },
     startSiteSelector: () => {
-      selectBookmarks();
+      keysnail.runPanel(
+        config.sites.map(site => ({
+          text: `📖  ${site.alias} (${site.url})`,
+          url: site.url
+        })),
+        { toggle: true }
+      );
+    },
+    runPanel: (candidates, options) => {
+      let panel = getPanel();
+      panel.run(candidates, options);
     },
     marked: command => ({ command: command, marked: true })
   };
