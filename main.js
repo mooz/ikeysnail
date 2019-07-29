@@ -54,8 +54,9 @@ function loadTabInfo() {
 
 function saveTabInfo(browser) {
     let tabURLs = browser.tabs.map(tab => tab.url);
+    let tabTitles = browser.tabs.map(tab => tab.title);
     let lastTabIndex = browser.currentTabIndex;
-    let lastTabInfo = [tabURLs, lastTabIndex];
+    let lastTabInfo = [tabURLs, lastTabIndex, tabTitles];
     $file.write({
         data: $data({string: JSON.stringify(lastTabInfo)}),
         path: "last-tabs.json"
@@ -395,14 +396,16 @@ function createWidgetTabList(browser) {
 class Tab {
     constructor(parent, url = "http://www.google.com", userScript = "") {
         this.parent = parent;
+        this.userScript = userScript;
         this.id =
             "tab-" +
             $objc("NSUUID")
                 .$UUID()
                 .$UUIDString()
                 .rawValue();
-        this._title = "";
-        this.elementSource = createWidgetTabContent(this, url, userScript);
+        this._title = url;
+        this.url = url;
+        this._loaded = false;
     }
 
     get selected() {
@@ -410,28 +413,37 @@ class Tab {
         return this === browser.selectedTab;
     }
 
-    focus() {
+    select() {
+        this.load();
         // https://github.com/WebKit/webkit/blob/39a299616172a4d4fe1f7aaf573b41020a1d7358/Source/WebKit/UIProcess/API/Cocoa/WKWebView.mm#L1318
-        let webView = this.element.runtimeValue();
-        webView.$becomeFirstResponder();
-        webView.$setAllowsBackForwardNavigationGestures(true);
+        this.runtimeWebView.$becomeFirstResponder();
+    }
+
+    set url(val) {
+        this._url = val;
+        if (this._loaded) {
+            this.element.url = val;
+        }
     }
 
     get url() {
-        return this.element.url;
+        let url = null;
+        if (this._loaded) {
+            url = this.element.url;
+        } else {
+            url = this._url;
+        }
+        if (!url) {
+            return config.NEW_PAGE_URL;
+        }
+        return url;
     }
 
-    /**
-     * Get JSBox view element
-     */
     get element() {
         let element = $(this.id);
         return element;
     }
 
-    /**
-     * Get title of current content page of the tab
-     */
     get title() {
         return this._title;
     }
@@ -446,8 +458,27 @@ class Tab {
     }
 
     visitURL(url) {
-        log("Visit " + url);
-        this.element.url = url;
+        this.url = url;
+    }
+
+    load() {
+        if (this._loaded) return;
+        let source = createWidgetTabContent(this, this.url, this.userScript);
+        this.parent._appendElementToView(source);
+        this.runtimeWebView.$setAllowsBackForwardNavigationGestures(true);
+        this._loaded = true;
+    }
+
+    get runtimeWebView() {
+        return this.element.runtimeValue();
+    }
+
+    unload() {
+        if (this._loaded) {
+            this._loaded = false;
+            this.element.url = null;
+            this.element.remove();
+        }
     }
 
     dispatchCtrlSpace() {
@@ -516,6 +547,8 @@ class TabBrowser {
 
     visitURL(url) {
         this.selectedTab.visitURL(url);
+        this.setURLView(url);
+        this.selectedTab.select();
     }
 
     showBookmark() {
@@ -581,7 +614,6 @@ ${tab.url}
             url = config.NEW_PAGE_URL;
         }
         let tab = new Tab(this, url, this.userScript);
-        this._appendElementToView(tab.elementSource);
         this.tabs.push(tab);
         if (selectNewTab) {
             this.selectTab(this.tabs.length - 1);
@@ -637,8 +669,8 @@ ${tab.url}
     selectTab(tabIndexToSelect) {
         this.currentTabIndex = tabIndexToSelect;
         let tab = this.tabs[this.currentTabIndex];
-        tab.focus();
         this.setURLView(tab.url);
+        tab.select();
         this._updateTabView();
     }
 
@@ -665,16 +697,22 @@ ${tab.url}
 function startSession(urlToVisit) {
     let lastTabs = [];
     let lastTabIndex = 0;
+    let tabTitles = null;
     try {
-        [lastTabs, lastTabIndex] = loadTabInfo();
-    } catch (x) {
-    }
+        let [tabUrls, lastTabIndex, tabTitles] = loadTabInfo();
+        tabTitles = tabTitles || [];
+        for (let i = 0; i < tabUrls.length; ++i) {
+            lastTabs.push({ url: tabUrls[i], title: tabTitles[i] });
+        }
+    } catch (x) {}
 
     let browser = new TabBrowser(readUserScript(), () => {
         if (lastTabs.length) {
-            log(JSON.stringify(lastTabs, null, 2));
-            lastTabs.forEach(url => {
-                let tab = new Tab(browser, url, browser.userScript);
+            lastTabs.forEach(tabInfo => {
+                let tab = new Tab(browser, tabInfo.url, browser.userScript);
+                if (tabInfo.title) {
+                    tab._title = tabInfo.title;
+                }
                 browser._appendElementToView(tab.elementSource);
                 browser.tabs.push(tab);
             });

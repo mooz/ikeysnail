@@ -5,6 +5,7 @@ const setup = (config, keysnail) => {
 
   config.TAB_VERTICAL = false;
   config.TAB_VERTICAL_WIDTH = 200;
+  config.TAB_LAZY_LOADING = true;
 
   config.CAPTURE_CTRL_SPACE = true;
   config.HIDE_STATUSBAR = true;
