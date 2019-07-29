@@ -770,10 +770,10 @@ function startSession(urlToVisit) {
         if (!config.TAB_LAZY_LOADING) {
           tab.load();
         }
-      });
+      });      
       browser.selectTab(lastTabIndex);
     } else {
-      browser.createNewTab("https://www.google.com/");
+      browser.createNewTab(config.NEW_TAB_URL, true);
     }
   });
 
