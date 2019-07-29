@@ -72,6 +72,13 @@ function readUserScript() {
     );
 }
 
+function understandURLLikeInput(url) {
+    if (!/^https?:/.test(url)) {
+        return "https://www.google.com/search?q=" + encodeURIComponent(url);
+    }
+    return url;
+}
+
 function createWidgetTabContent(tab, url, userScript) {
     let props = {
         id: tab.id,
@@ -234,18 +241,22 @@ function createWidgetURLInput(browser) {
                 sender.textColor = $rgba(0, 0, 0, 1);
                 originalURL = sender.text;
             },
+            tapped: sender => {
+                browser.focusLocationBar();
+            },
             returned: sender => {
                 sender.blur();
             },
             didEndEditing: sender => {
                 sender.align = $align.center;
                 sender.textColor = $color(URL_COLOR);
-                if (originalURL !== sender.text) {
-                    try {
-                        browser.visitURL(sender.text);
-                    } catch (x) {
-                        alert(x);
-                    }
+                if (/^[ \t]*$/.test(sender.text)) {
+                    sender.text = originalURL;
+                } else if (originalURL !== sender.text) {
+                    browser.visitURL(understandURLLikeInput(sender.text));
+                    // TODO: Dirty hack for getting focus on the current tab.
+                    // becomeFirstResponder of the tab doesn't work. Better way?
+                    setTimeout(() => browser.selectedTab.select(), 100);
                 }
             }
         }
