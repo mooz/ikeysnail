@@ -725,6 +725,7 @@
     }
 
     exit() {
+      this.queryInput.blur();
       this._hidden = true;
       if (gHitHintDisposerInternal) {
         gHitHintDisposerInternal();
