@@ -879,8 +879,7 @@
       } else if (gCodeMirror) {
         gCodeMirror.replaceSelection(text);
       } else if (document.activeElement.contentWindow) {
-        let doc = document;
-        doc = document.activeElement.contentWindow.document;
+        let doc = document.activeElement.contentWindow.document;
         doc.execCommand("insertText", false, text);
       } else {
         document.execCommand("insertText", false, text);
