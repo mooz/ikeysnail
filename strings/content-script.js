@@ -8,9 +8,7 @@
   }
 
   function message(msg, duration) {
-    if (config.DEBUG_SHOW_MESSAGE) {
-      $notify("message", { message: msg, duration: duration });
-    }
+    $notify("message", { message: msg, duration: duration });
   }
 
   function inIframe() {
