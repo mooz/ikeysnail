@@ -1047,7 +1047,6 @@ function startSession(urlToVisit) {
         let urlBarCommands = {
           "ctrl-p": () => browser.selectPreviousCandidate(),
           "ctrl-n": () => browser.selectNextCandidate(),
-          Enter: () => browser.decideCandidate(),
           "ctrl-m": () => browser.decideCandidate(),
           "ctrl-g": () => browser.blurLocationBar(),
           Escape: () => browser.blurLocationBar()
@@ -1092,6 +1091,14 @@ function startSession(urlToVisit) {
                 if (ctrlKey) completeKeyString = "ctrl-" + completeKeyString;
 
                 if (commands.hasOwnProperty(completeKeyString)) {
+                  if (
+                    completeKeyString === "ctrl-m" &&
+                    inputElement.$markedTextRange()
+                  ) {
+                    // TODO: doesn't work
+                    return self.$ORIG__handleKeyUIEvent(evt);
+                  }
+
                   if (pressed) {
                     // $ui.toast("Exec command for " + completeKeyString);
                     try {
