@@ -9,7 +9,10 @@ const TAB_FONT_SIZE = 13;
 const TAB_CLOSE_BUTTON_SIZE = 15;
 
 const TOPBAR_FIRSTROW_OFFSET = 5;
+
+// URL Bar
 const URLBAR_HEIGHT = TOPBAR_HEIGHT - 10;
+const URLBAR_RATIO = 0.6;
 
 const CONTAINER_BG = $rgba(250, 250, 250, 0.9);
 
@@ -322,13 +325,14 @@ function createWidgetURLInput(browser) {
     props: {
       id: "url-input",
       textColor: $color(URL_COLOR),
+      // bgcolor: $color("EEEEEE"),
       align: $align.center
     },
     layout: (make, view) => {
       make.top.inset(TOPBAR_FIRSTROW_OFFSET);
-      make.left.inset(100);
       make.height.equalTo(URLBAR_HEIGHT);
-      make.width.equalTo(view.super.width).offset(-200);
+      make.width.equalTo(view.super.width).multipliedBy(URLBAR_RATIO);
+      make.centerX.equalTo(view.super.center);
     },
     events: {
       didBeginEditing: sender => {
@@ -487,8 +491,7 @@ function createWidgetTabList(browser) {
         template: tabTemplate,
         data: data,
         bgcolor: TAB_LIST_BG,
-        borderWidth: 1,
-        borderColor: TAB_FG_INACTIVE
+        borderWidth: 0
       },
       layout: (make, view) => {
         make.width.equalTo(VERTICAL_TAB_WIDTH);
@@ -534,7 +537,7 @@ function createWidgetCompletions(browser, candidates, selectedIndex) {
         props: {
           id: "completion-label",
           align: $align.left,
-          font: $font(20),
+          font: $font(18),
           borderWidth: 1,
           textColor: $color("#000000"),
           borderColor: $color("#FFFFFF"),
@@ -553,7 +556,7 @@ function createWidgetCompletions(browser, candidates, selectedIndex) {
   const data = candidates.map((name, index) => {
     let label = {
       "completion-label": {
-        text: "   🔎  " + name,
+        text: " 🔎 " + name,
         tabIndex: index
       }
     };
@@ -581,10 +584,10 @@ function createWidgetCompletions(browser, candidates, selectedIndex) {
       borderColor: $color("#EEEEEE")
     },
     layout: (make, view) => {
-      make.top.inset(TOPBAR_HEIGHT - 8 + 3);
-      make.left.inset(100);
+      make.top.inset(TOPBAR_HEIGHT - 4);
       make.height.equalTo(COMP_HEIGHT * candidates.length);
-      make.width.equalTo(view.super.width).offset(-200);
+      make.width.equalTo(view.super.width).multipliedBy(URLBAR_RATIO);
+      make.centerX.equalTo(view.super.center);
     }
   };
 }
