@@ -484,6 +484,9 @@
       });
       const title = document.querySelector("head title");
       titleObserver.observe(title, { childList: true });
+      window.alert = function(msg) {
+        message(msg);
+      };
     }
 
     if (document.querySelector(".CodeMirror")) {
