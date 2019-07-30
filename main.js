@@ -58,7 +58,9 @@ function readMinified(prefix) {
 
 function loadTabInfo() {
   try {
-    let [tabURLs, tabIndex, tabNames] = JSON.parse($file.read("last-tabs.json").string.trim());
+    let [tabURLs, tabIndex, tabNames] = JSON.parse(
+      $file.read("last-tabs.json").string.trim()
+    );
     if (tabURLs.length !== tabNames.length) throw "Invalid";
     return [tabURLs, tabIndex, tabNames];
   } catch (x) {
@@ -190,8 +192,7 @@ function createWidgetTabContent(tab, url, userScript) {
         if (!url) {
           url = $clipboard.text;
         }
-        url = understandURLLikeInput(url);
-        tab.parent.createNewTab(url, true);
+        tab.parent.createNewTab(understandURLLikeInput(url), true);
       },
       selectTabsByPanel: () => {
         let candidates = tab.parent.tabs.map((tab, index) => ({
@@ -997,7 +998,7 @@ function startSession(urlToVisit) {
         if (!config.TAB_LAZY_LOADING) {
           tab.load();
         }
-      });      
+      });
       browser.selectTab(lastTabIndex);
     } else {
       browser.createNewTab(config.NEW_TAB_URL, true);
