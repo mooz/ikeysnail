@@ -6,12 +6,20 @@ const VERTICAL_TAB_WIDTH = config.TAB_VERTICAL_WIDTH;
 const TOPBAR_HEIGHT = 35;
 const TAB_HEIGHT = 30;
 const TAB_FONT_SIZE = 13;
-const TAB_CLOSE_BUTTON_SIZE = 20;
-const TAB_BG_SELECTED = "#efefef";
-const TAB_FG_SELECTED = "#000000";
-const TAB_BG_INACTIVE = "#cccccc";
-const TAB_LIST_BG = "#bbbbbb";
-const TAB_FG_INACTIVE = "#666666";
+const TAB_CLOSE_BUTTON_SIZE = 15;
+
+const TOPBAR_FIRSTROW_OFFSET = 5;
+const URLBAR_HEIGHT = TOPBAR_HEIGHT - 10;
+
+const CONTAINER_BG = $rgba(250, 250, 250, 0.9);
+
+const TAB_BG_SELECTED = $rgba(250, 250, 250, 0.9);
+const TAB_FG_SELECTED = $color("#000000");
+
+const TAB_BG_INACTIVE = $color("#cccccc");
+const TAB_FG_INACTIVE = $color("#666666");
+
+const TAB_LIST_BG = $color("#bbbbbb");
 const URL_COLOR = "#2B9E46";
 
 function log(message) {
@@ -187,11 +195,11 @@ __keysnail__.runPanel(${JSON.stringify(candidates)}, {
       if (VERTICAL) {
         make.edges
           .equalTo(view.super)
-          .insets($insets(TOPBAR_HEIGHT, VERTICAL_TAB_WIDTH, 0, 0));
+          .insets($insets(TOPBAR_HEIGHT + 1, VERTICAL_TAB_WIDTH, 0, 0));
       } else {
         make.edges
           .equalTo(view.super)
-          .insets($insets(TOPBAR_HEIGHT + TAB_HEIGHT, 0, 0, 0));
+          .insets($insets(TOPBAR_HEIGHT + TAB_HEIGHT + 1, 0, 0, 0));
       }
     }
   };
@@ -212,7 +220,7 @@ function createWidgetBookmarkListButton(browser) {
       }
     },
     layout: make => {
-      make.top.inset(5);
+      make.top.inset(TOPBAR_FIRSTROW_OFFSET);
       make.right.inset(55);
     }
   };
@@ -233,7 +241,7 @@ function createWidgetShareButton(browser) {
       }
     },
     layout: make => {
-      make.top.inset(5);
+      make.top.inset(TOPBAR_FIRSTROW_OFFSET);
       make.left.inset(55);
     }
   };
@@ -270,9 +278,9 @@ function createWidgetURLInput(browser) {
       align: $align.center
     },
     layout: (make, view) => {
-      make.top.inset(3);
+      make.top.inset(TOPBAR_FIRSTROW_OFFSET);
       make.left.inset(100);
-      make.height.equalTo(TOPBAR_HEIGHT - 8);
+      make.height.equalTo(URLBAR_HEIGHT);
       make.width.equalTo(view.super.width).offset(-200);
     },
     events: {
@@ -330,15 +338,26 @@ function createWidgetTabList(browser) {
     props: {},
     views: [
       {
-        type: "label",
+        type: "view",
         props: {
-          id: "tab-name",
-          align: $align.center,
-          font: $font(TAB_FONT_SIZE),
-          borderWidth: 1,
-          borderColor: $color("#777777")
+          id: "tab-rectangle"
         },
-        layout: $layout.fill
+        layout: $layout.fill,
+        views: [
+          {
+            type: "label",
+            props: {
+              id: "tab-name",
+              align: $align.center,
+              font: $font(TAB_FONT_SIZE)
+            },
+            layout: (make, view) => {
+              make.height.equalTo(view.super.height);
+              make.width.equalTo(view.super.width).offset(-30);
+              make.left.equalTo(view.super.left).offset(25);
+            }
+          }
+        ]
       },
       {
         type: "button",
@@ -357,8 +376,8 @@ function createWidgetTabList(browser) {
           }
         },
         layout: (make, view) => {
-          make.left.equalTo(view.super.left).offset(5);
-          make.top.inset(5);
+          make.left.equalTo(view.super.left).offset(TOPBAR_FIRSTROW_OFFSET);
+          make.top.inset(TOPBAR_FIRSTROW_OFFSET);
         }
       }
     ]
@@ -368,18 +387,22 @@ function createWidgetTabList(browser) {
     if (index === browser.currentTabIndex) {
       return {
         "tab-name": {
-          text: name,
-          bgcolor: $color(TAB_BG_SELECTED),
-          textColor: $color(TAB_FG_SELECTED),
+          text: name
+        },
+        "tab-rectangle": {
+          bgcolor: TAB_BG_SELECTED,
+          textColor: TAB_FG_SELECTED,
           tabIndex: index
         }
       };
     } else {
       return {
         "tab-name": {
-          text: name,
-          bgcolor: $color(TAB_BG_INACTIVE),
-          textColor: $color(TAB_FG_INACTIVE),
+          text: name
+        },
+        "tab-rectangle": {
+          bgcolor: TAB_BG_INACTIVE,
+          textColor: TAB_FG_INACTIVE,
           tabIndex: index
         },
         "close-button": {
@@ -403,9 +426,9 @@ function createWidgetTabList(browser) {
         // spacing: 0,
         template: tabTemplate,
         data: data,
-        bgcolor: $color(TAB_LIST_BG),
+        bgcolor: TAB_LIST_BG,
         borderWidth: 1,
-        borderColor: $color(TAB_FG_INACTIVE)
+        borderColor: TAB_FG_INACTIVE
       },
       layout: (make, view) => {
         make.width.equalTo(VERTICAL_TAB_WIDTH);
@@ -566,7 +589,7 @@ class TabBrowser {
         statusBarHidden: config.HIDE_STATUSBAR,
         navBarHidden: config.HIDE_TOOLBAR,
         keyCommands: generateKeyCommands(keymap),
-        bgcolor: $rgba(250, 250, 250, 0.9)
+        bgcolor: CONTAINER_BG
       },
       events: {
         appeared: sender => {
