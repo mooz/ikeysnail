@@ -1018,30 +1018,85 @@ function startSession(urlToVisit) {
       });
 
       if (config.CAPTURE_CTRL_SPACE) {
+        function flip(obj) {
+          const ret = {};
+          Object.keys(obj).forEach(key => {
+            ret[obj[key]] = key;
+          });
+          return ret;
+        }
+
         let ctrlKey = false;
+        let metaKey = false;
+
+        let inputElement = $("url-input").runtimeValue();
+
+        const key = {
+          meta: 227,
+          Escape: 41,
+          Enter: 40,
+          ctrl: 224,
+          " ": 44
+        };
+        for (let i = 0; i < 27; ++i) {
+          key[String.fromCharCode(97 + i)] = 4 + i;
+        }
+        Object.freeze(key);
+        const codeToKey = flip(key);
+
+        let urlBarCommands = {
+          "ctrl-p": () => browser.selectPreviousCandidate(),
+          "ctrl-n": () => browser.selectNextCandidate(),
+          Enter: () => browser.decideCandidate(),
+          "ctrl-m": () => browser.decideCandidate(),
+          "ctrl-g": () => browser.blurLocationBar(),
+          Escape: () => browser.blurLocationBar()
+        };
+
+        let defaultCommands = {
+          "ctrl- ": () => browser.selectedTab.dispatchCtrlSpace(),
+          "ctrl-l": () => browser.focusLocationBar(),
+          "ctrl-meta-j": () => browser.selectNextTab(),
+          "ctrl-meta-k": () => browser.selectPreviousTab()
+        };
+
         // Workaround for capturing Ctrl-Space
         $define({
-          type: "WKWebView",
-          // type: "UIApplication",
+          // type: "WKWebView",
+          type: "UIApplication",
           events: {
             // Swizzling handleKeyUIEvent doesn't work. We need to swizzle the private one (_handleXXX).
             "_handleKeyUIEvent:": evt => {
-              const P = 19;
-              const N = 17;
-              const ESC = 41;
-              const CTRL = 224;
-              const G = 10;
-              const SPACE = 44;
-              let keyCode = evt.$__keyCode();
-              let pressed = evt.$__isKeyDown();
-              if (keyCode === CTRL) {
+              const keyCode = evt.$__keyCode();
+              const pressed = evt.$__isKeyDown();
+              const keyString = codeToKey[keyCode];
+
+              if (!codeToKey.hasOwnProperty(keyCode)) {
+                return self.$ORIG__handleKeyUIEvent(evt);
+              }
+
+              // Decide keymap
+              let commands = defaultCommands;
+              if (inputElement.$isFirstResponder()) {
+                commands = urlBarCommands;
+              }
+
+              // Exec commands
+              if (keyCode === key.ctrl) {
                 ctrlKey = pressed;
-              } else if (keyCode === SPACE) {
-                // Space key.
-                if (ctrlKey) {
+              } else if (keyCode === key.meta) {
+                metaKey = pressed;
+              } else {
+                let completeKeyString = keyString;
+                if (metaKey) completeKeyString = "meta-" + completeKeyString;
+                if (ctrlKey) completeKeyString = "ctrl-" + completeKeyString;
+
+                if (commands.hasOwnProperty(completeKeyString)) {
                   if (pressed) {
-                    // Ctrl + Space. Prevent default action by returning null.
-                    browser.selectedTab.dispatchCtrlSpace();
+                    // $ui.toast("Exec command for " + completeKeyString);
+                    try {
+                      commands[completeKeyString]();
+                    } catch (x) {}
                   }
                   return null;
                 }
@@ -1056,8 +1111,8 @@ function startSession(urlToVisit) {
       try {
         $objc("RedBoxCore").$cleanClass("UIResponder");
         if (config.CAPTURE_CTRL_SPACE) {
-          $objc("RedBoxCore").$cleanClass("WKWebView");
-          // $objc("RedBoxCore").$cleanClass("UIApplication");
+          // $objc("RedBoxCore").$cleanClass("WKWebView");
+          $objc("RedBoxCore").$cleanClass("UIApplication");
         }
       } catch (x) {
         console.error(x);
