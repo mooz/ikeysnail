@@ -93,6 +93,29 @@ function understandURLLikeInput(url) {
   return url;
 }
 
+function getSuggestions(query) {
+  const completionURL =
+    "https://www.google.com/complete/search?client=chrome-omni&gs_ri=chrome-ext&oit=1&cp=1&pgcl=7&q=" +
+    encodeURIComponent(query);
+  return new Promise((resolve, reject) => {
+    $http.request({
+      method: "GET",
+      url: completionURL,
+      handler: function(resp) {
+        if (resp.error) {
+          reject(resp.error);
+        } else {
+          resolve(resp.data);
+        }
+      }
+    });
+  });
+}
+
+// ------------------------------------------------------------------- //
+// Widgets
+// ------------------------------------------------------------------- //
+
 function createWidgetTabContent(tab, url, userScript) {
   let props = {
     id: tab.id,
@@ -269,7 +292,30 @@ function createWidgetExitButton(browser) {
 }
 
 function createWidgetURLInput(browser) {
+  const isURL = urlLike => /https?:\/\//.test(urlLike);
+
   let originalURL = null;
+
+  function debounce(func, interval = 500) {
+    let timer = null;
+    return (...args) => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+      timer = setTimeout(async () => {
+        func(...args);
+      }, interval);
+    };
+  }
+
+  const obtainSuggestions = debounce(async (query, sender) => {
+    const [_, suggestions] = await getSuggestions(query);
+    const NUM_CANDIDATE_MAX = 10;
+    if (!sender.ks_shouldHideSuggestions) {
+      browser.suggestions = suggestions.slice(0, NUM_CANDIDATE_MAX);
+    }
+  }, 200);
+
   return {
     type: "input",
     props: {
@@ -285,6 +331,8 @@ function createWidgetURLInput(browser) {
     },
     events: {
       didBeginEditing: sender => {
+        sender.ks_confirmed = false;
+        sender.ks_shouldHideSuggestions = false;
         sender.align = $align.left;
         sender.textColor = $rgba(0, 0, 0, 1);
         originalURL = sender.text;
@@ -293,19 +341,30 @@ function createWidgetURLInput(browser) {
         browser.focusLocationBar();
       },
       returned: sender => {
+        sender.ks_confirmed = true;
         sender.blur();
       },
       didEndEditing: sender => {
+        sender.ks_shouldHideSuggestions = true;
+        browser.suggestions = null;
         sender.align = $align.center;
         sender.textColor = $color(URL_COLOR);
-        if (/^[ \t]*$/.test(sender.text)) {
+
+        if (!sender.ks_confirmed || /^[ \t]*$/.test(sender.text)) {
+          // Recover original text
           sender.text = originalURL;
         } else if (originalURL !== sender.text) {
-          browser.visitURL(understandURLLikeInput(sender.text));
+          browser.visitURL(sender.text);
           // TODO: Dirty hack for getting focus on the current tab.
           // becomeFirstResponder of the tab doesn't work. Better way?
           setTimeout(() => browser.selectedTab.select(), 100);
         }
+      },
+      changed: sender => {
+        if (isURL(sender.text)) {
+          return;
+        }
+        obtainSuggestions(sender.text, sender);
       }
     }
   };
@@ -463,6 +522,72 @@ function createWidgetTabList(browser) {
   }
 }
 
+function createWidgetCompletions(browser, candidates, selectedIndex) {
+  const COMP_HEIGHT = TAB_HEIGHT + 5;
+
+  const template = {
+    props: {},
+    views: [
+      {
+        type: "label",
+        props: {
+          id: "completion-label",
+          align: $align.left,
+          font: $font(20),
+          borderWidth: 1,
+          textColor: $color("#000000"),
+          borderColor: $color("#FFFFFF"),
+          bgcolor: $color("#FFFFFF")
+        },
+        layout: (make, view) => {
+          make.top.inset(0);
+          make.left.inset(0);
+          make.height.equalTo(view.super.height);
+          make.width.equalTo(view.super.width);
+        }
+      }
+    ]
+  };
+
+  const data = candidates.map((name, index) => {
+    let label = {
+      "completion-label": {
+        text: "   🔎  " + name,
+        tabIndex: index
+      }
+    };
+    if (index === selectedIndex) {
+      label["completion-label"].bgcolor = $color("#DDDDDD");
+    }
+    return label;
+  });
+
+  return {
+    type: "list",
+    events: {
+      didSelect: (sender, indexPath) => {
+        browser.decideCandidate(indexPath.row);
+      }
+    },
+    props: {
+      id: "completion-list",
+      rowHeight: COMP_HEIGHT,
+      template: template,
+      data: data,
+      bgColor: TAB_LIST_BG,
+      borderWidth: 1,
+      radius: 3,
+      borderColor: $color("#EEEEEE")
+    },
+    layout: (make, view) => {
+      make.top.inset(TOPBAR_HEIGHT - 8 + 3);
+      make.left.inset(100);
+      make.height.equalTo(COMP_HEIGHT * candidates.length);
+      make.width.equalTo(view.super.width).offset(-200);
+    }
+  };
+}
+
 // -------------------------------------------------------------------- //
 // Tab class
 // -------------------------------------------------------------------- //
@@ -601,9 +726,82 @@ class TabBrowser {
         createWidgetBookmarkListButton(browser),
         createWidgetShareButton(browser),
         createWidgetURLInput(browser),
-        createWidgetExitButton(browser)
+        createWidgetExitButton(browser),
+        {
+          type: "view",
+          props: { bgcolor: TAB_LIST_BG },
+          layout: function(make, view) {
+            make.top.equalTo(TOPBAR_HEIGHT + (VERTICAL ? 0 : TAB_HEIGHT));
+            make.left.equalTo(0);
+            make.height.equalTo(1);
+            make.width.equalTo(view.super.width);
+          }
+        }
       ]
     });
+  }
+
+  set suggestions(val) {
+    this._suggestionList = val;
+    this._suggestionIndex = -1;
+    this._updateCandidateView();
+  }
+
+  _updateCandidateView() {
+    function removeIfExists(id) {
+      try {
+        let element = $(id);
+        if (element) {
+          element.remove();
+        }
+      } catch (x) {
+        log("Error in removing tab list: " + x);
+      }
+    }
+    removeIfExists("completion-list");
+    if (this._suggestionList) {
+      this._appendElementToView(
+        createWidgetCompletions(
+          this,
+          this._suggestionList,
+          this._suggestionIndex
+        )
+      );
+    }
+  }
+
+  decideCandidate(index) {
+    $("url-input").ks_confirmed = true;
+    if (typeof index !== "number") {
+      index = this._suggestionIndex;
+    }
+    if (index >= 0) {
+      $("url-input").text = this._suggestionList[index];
+    }
+    this.blurLocationBar();
+  }
+
+  selectNextCandidate() {
+    if (this._suggestionIndex < 0) {
+      this._suggestionIndex = 0;
+    } else {
+      this._suggestionIndex =
+        (this._suggestionIndex + 1) % this._suggestionList.length;
+    }
+    this._updateCandidateView();
+  }
+
+  selectPreviousCandidate() {
+    if (this._suggestionIndex < 0) {
+      this._suggestionIndex = this._suggestionList.length - 1;
+    } else {
+      if (this._suggestionIndex - 1 < 0) {
+        this._suggestionIndex = this._suggestionList.length - 1;
+      } else {
+        this._suggestionIndex = this._suggestionIndex - 1;
+      }
+    }
+    this._updateCandidateView();
   }
 
   get selectedTab() {
@@ -619,6 +817,7 @@ class TabBrowser {
   }
 
   visitURL(url) {
+    url = understandURLLikeInput(url);
     this.selectedTab.visitURL(url);
     this.setURLView(url);
     this.selectedTab.select();
@@ -638,6 +837,11 @@ class TabBrowser {
     $("url-input")
       .runtimeValue()
       .$selectAll();
+  }
+
+  blurLocationBar() {
+    $("url-input").blur();
+    this.selectedTab.select();
   }
 
   share() {
