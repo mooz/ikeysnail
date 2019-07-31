@@ -5,8 +5,11 @@ const VERTICAL = config.TAB_VERTICAL;
 const VERTICAL_TAB_WIDTH = config.TAB_VERTICAL_WIDTH;
 const TOPBAR_HEIGHT = 35;
 const TAB_HEIGHT = 30;
-const TAB_FONT_SIZE = 13;
-const TAB_CLOSE_BUTTON_SIZE = 15;
+
+const SIZE_TAB_FONT = 13;
+
+const SIZE_TAB_CLOSE_ICON_BUTTON = 15;
+const SIZE_TOPBAR_ICON_BUTTON = 18;
 
 const TOPBAR_FIRSTROW_OFFSET = 5;
 
@@ -1082,10 +1085,12 @@ function startSession(urlToVisit) {
 
       let ctrlKey = false;
       let metaKey = false;
+      let optionKey = false;
 
       let inputElement = $("url-input").runtimeValue();
 
       const key = {
+        option: 226,
         meta: 227,
         Escape: 41,
         Enter: 40,
@@ -1094,6 +1099,11 @@ function startSession(urlToVisit) {
       };
       for (let i = 0; i < 27; ++i) {
         key[String.fromCharCode(97 + i)] = 4 + i;
+      }
+      if (config.SWAP_COMMAND_OPTION) {
+        let originalOption = key.option;
+        key.option = key.meta;
+        key.meta = originalOption;
       }
       Object.freeze(key);
       const codeToKey = flip(key);
@@ -1143,10 +1153,13 @@ function startSession(urlToVisit) {
               ctrlKey = pressed;
             } else if (keyCode === key.meta) {
               metaKey = pressed;
+            } else if (keyCode === key.option) {
+              optionKey = pressed;
             } else {
               let completeKeyString = keyString;
               if (metaKey) completeKeyString = "meta-" + completeKeyString;
               if (ctrlKey) completeKeyString = "ctrl-" + completeKeyString;
+              if (optionKey) completeKeyString = "alt-" + completeKeyString;
 
               if (commands.hasOwnProperty(completeKeyString)) {
                 if (

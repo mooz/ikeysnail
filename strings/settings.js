@@ -14,6 +14,8 @@ const setup = (config, keysnail) => {
   config.USER_AGENT =
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0 Safari/605.1.15";
 
+  config.SWAP_COMMAND_OPTION = false;
+
   // See
   // https://developer.mozilla.org/ja/docs/Web/API/KeyboardEvent/key/Key_Values
 

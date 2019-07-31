@@ -280,10 +280,21 @@
     if (nonDisplayableKeys.hasOwnProperty(ev.key)) {
       modifiers.push("shift");
     }
+    const modifierMap = !config.SWAP_COMMAND_OPTION
+      ? {
+          alt: "alt",
+          meta: "meta",
+          ctrl: "ctrl"
+        }
+      : {
+          alt: "meta",
+          meta: "alt",
+          ctrl: "ctrl"
+        };
     const modifierStrings = modifiers.reduce(
       (modifierStrings, modifier) =>
         ev[`${modifier}Key`]
-          ? modifierStrings.concat([modifier])
+          ? modifierStrings.concat([modifierMap[modifier]])
           : modifierStrings,
       []
     );
