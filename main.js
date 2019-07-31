@@ -486,7 +486,11 @@ function createWidgetTabList(browser) {
         didLongPress: (sender, indexPath) => {
           const commands = [
             ["Copy", () => browser.copyTabInfo(indexPath.row)],
-            ["Close other tab", () => browser.closeTabsBesides(indexPath.row)]
+            ["Close other tabs", () => browser.closeTabsBesides(indexPath.row)],
+            [
+              "Open in external browser",
+              () => browser.openInExternalBrowser(indexPath.row)
+            ]
           ];
           $ui.menu({
             items: commands.map(c => c[0]),
@@ -894,6 +898,10 @@ ${tab.url}
       type: "public.plain-text",
       value: this.tabs[tabIndex].url
     });
+  }
+
+  openInExternalBrowser(tabIndex) {
+    $app.openURL(this.tabs[tabIndex].url);
   }
 
   closeTabsBesides(tabIndexToRetain) {
