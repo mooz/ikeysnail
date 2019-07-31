@@ -62,6 +62,10 @@ function readMinified(prefix) {
   }
 }
 
+// ----------------------------------------------------------- //
+// Tab Info (TODO: class)
+// ----------------------------------------------------------- //
+
 function loadTabInfo() {
   try {
     let [tabURLs, tabIndex, tabNames] = JSON.parse(
@@ -85,6 +89,38 @@ function saveTabInfo(browser) {
   });
 }
 
+// ----------------------------------------------------------- //
+// History (TODO: class)
+// ----------------------------------------------------------- //
+
+function loadHistory() {
+  try {
+    let history = JSON.parse($file.read("history.json").string.trim());
+    if (!Array.isArray(history.pages)) throw "Error";
+    if (!Array.isArray(history.bookmarks)) throw "Error";
+    return history;
+  } catch (x) {
+    return {
+      page: {
+        urls: [],
+        titles: []
+      },
+      bookmark: []
+    };
+  }
+}
+
+function saveHistory(browser) {
+  $file.write({
+    data: $data({ string: JSON.stringify(browser.history) }),
+    path: "history.json"
+  });
+}
+
+// ----------------------------------------------------------- //
+// User script
+// ----------------------------------------------------------- //
+
 function readUserScript() {
   let userSettings = readMinified("./strings/settings");
   let contentScript = readMinified("./strings/content-script");
@@ -94,14 +130,18 @@ function readUserScript() {
   );
 }
 
-function understandURLLikeInput(url) {
+// ----------------------------------------------------------- //
+// Query processing
+// ----------------------------------------------------------- //
+
+function convertURLLikeInputToURL(url) {
   if (!/^https?:/.test(url)) {
     return "https://www.google.com/search?q=" + encodeURIComponent(url);
   }
   return url;
 }
 
-function getSuggestions(query) {
+function getQueryCompletionsFromWeb(query) {
   const completionURL =
     "https://www.google.com/complete/search?client=chrome-omni&gs_ri=chrome-ext&oit=1&cp=1&pgcl=7&q=" +
     encodeURIComponent(query);
@@ -117,6 +157,40 @@ function getSuggestions(query) {
         }
       }
     });
+  });
+}
+
+// TODO: Make the off-the-ui-thread
+// TODO: Or use sqlite!
+function findPageEntriesByQuery(query, urls, titles,
+                                reverse=false,
+                                caseInsensitive=false,
+                                RESULTS_COUNT_LIMIT=5) {
+  if (caseInsensitive) {
+    query = query.toLowerCase();
+  }
+
+  return new Promise((resolve, reject) => {
+    let matchedIndices = [];
+    let index;
+    for (let i = 0; i < urls.length; ++i) {
+      // Reverse order (e.g., for histories, it's natural to show last ones)
+      index = reverse ? urls.length - 1 - i : i;
+      // Don't match to http part (because it's obvious)
+      let url = urls[index].replace(/^https?:\/\//, "");
+      let title = titles[index];
+      if (caseInsensitive) {
+        title = title.toLowerCase();
+      }
+      if (url.indexOf(query) >= 0 || title.indexOf(query) >= 0) {
+        matchedIndices.push(index);
+        if (matchedIndices.length >= RESULTS_COUNT_LIMIT) {
+          resolve(matchedIndices);
+          return;
+        }
+      }
+    }
+    resolve(matchedIndices);
   });
 }
 
@@ -144,6 +218,7 @@ function createWidgetTabContent(tab, url, userScript) {
       },
       titleDetermined: ({ title }) => {
         tab.title = title;
+        tab.parent.addHistory(tab.url, tab.title);
       },
       didFinish: async sender => {
         // Nothing?
@@ -198,7 +273,7 @@ function createWidgetTabContent(tab, url, userScript) {
         if (!url) {
           url = $clipboard.text;
         }
-        tab.parent.createNewTab(understandURLLikeInput(url), true);
+        tab.parent.createNewTab(convertURLLikeInputToURL(url), true);
       },
       selectTabsByPanel: () => {
         let candidates = tab.parent.tabs.map((tab, index) => ({
@@ -316,10 +391,40 @@ function createWidgetURLInput(browser) {
   }
 
   const obtainSuggestions = debounce(async (query, sender) => {
-    const [_, suggestions] = await getSuggestions(query);
-    const NUM_CANDIDATE_MAX = 10;
+    // TODO: Add bookmark search (sites).
+    const [[_, suggestions], historyIndices, tabIndices] = await Promise.all([
+      getQueryCompletionsFromWeb(query),
+      findPageEntriesByQuery(
+        query,
+        browser._pastURLs,
+        browser._pastTitles,
+        (reverse = true),
+        (caseInsensitive = true)
+      ),
+      findPageEntriesByQuery(
+        query,
+        browser.tabs.map(tab => tab.url),
+        browser.tabs.map(tab => tab.title),
+        (reverse = false),
+        (caseInsensitive = true)
+      )
+    ]);
+
+    const NUM_CANDIDATE_MAX = 5;
+
     if (!sender.ks_shouldHideSuggestions) {
-      browser.suggestions = suggestions.slice(0, NUM_CANDIDATE_MAX);
+      browser.suggestions = {
+        completion: suggestions.slice(0, NUM_CANDIDATE_MAX),
+        history: {
+          urls: historyIndices.map(i => browser._pastURLs[i]),
+          titles: historyIndices.map(i => browser._pastTitles[i])
+        },
+        tab: {
+          indices: tabIndices,
+          urls: tabIndices.map(i => browser.tabs[i].url),
+          titles: tabIndices.map(i => browser.tabs[i].title)
+        }
+      };
     }
   }, 200);
 
@@ -350,6 +455,7 @@ function createWidgetURLInput(browser) {
       },
       returned: sender => {
         sender.ks_confirmed = true;
+        browser.decideCandidate();
         sender.blur();
       },
       didEndEditing: sender => {
@@ -551,42 +657,105 @@ function createWidgetTabList(browser) {
 }
 
 function createWidgetCompletions(browser, candidates, selectedIndex) {
-  const COMP_HEIGHT = TAB_HEIGHT + 5;
+  const LABEL_HEIGHT = TAB_HEIGHT + 5;
+  const COMP_HEIGHT = LABEL_HEIGHT + 5;
 
   const template = {
     props: {},
     views: [
       {
+        type: "view",
+        props: {
+          id: "completion-rectangle",
+          bgcolor: $color("#FFFFFF")
+        },
+        layout: $layout.fill
+      },
+      {
+        type: "button",
+        props: {
+          id: "completion-icon",
+          bgcolor: $color("clear")
+        },
+        layout: (make, view) => {
+          make.top.inset(10);
+          make.left.inset(10);
+        }
+      },
+      {
         type: "label",
         props: {
           id: "completion-label",
           align: $align.left,
-          font: $font(18),
-          borderWidth: 1,
-          textColor: $color("#000000"),
-          borderColor: $color("#FFFFFF"),
-          bgcolor: $color("#FFFFFF")
+          font: $font(15),
+          borderWidth: 0,
+          textColor: $color("#000000")
         },
         layout: (make, view) => {
-          make.top.inset(0);
-          make.left.inset(0);
-          make.height.equalTo(view.super.height);
+          make.top.inset(3);
+          make.left.inset(32);
+          make.width.equalTo(view.super.width);
+        }
+      },
+      {
+        type: "label",
+        props: {
+          id: "completion-url",
+          align: $align.left,
+          font: $font(12),
+          textColor: $rgba(0, 0, 0, 0.6)
+        },
+        layout: (make, view) => {
+          make.bottom.inset(3);
+          make.left.inset(32);
           make.width.equalTo(view.super.width);
         }
       }
     ]
   };
 
-  const data = candidates.map((name, index) => {
-    let label = {
-      "completion-label": {
-        text: " 🔎 " + name,
-        tabIndex: index
-      }
-    };
-    if (index === selectedIndex) {
-      label["completion-label"].bgcolor = $color("#DDDDDD");
+  const data = candidates.map((candidate, index) => {
+    let label = null;
+    if (candidate.type === "suggestion") {
+      label = {
+        "completion-label": {
+          text: candidate.value,
+          tabIndex: index
+        },
+        "completion-url": {
+          text: "suggested by Google"
+        },
+        "completion-icon": {
+          icon: $icon("023", $rgba(140, 140, 140, 0.8), $size(13, 13))
+        }
+      };
+    } else if (candidate.type === "history" || candidate.type === "tab") {
+      label = {
+        "completion-label": {
+          text: candidate.title,
+          tabIndex: index
+        },
+        "completion-url": {
+          text: candidate.value.replace(/^https?:\/\//, "")
+        },
+        "completion-icon": {
+          icon: $icon(
+            candidate.type === "history" ? "099" : "026",
+            $rgba(140, 140, 140, 0.8),
+            $size(13, 13)
+          )
+        }
+      };
+    } else {
+      throw "Error. Unknown candidate.";
     }
+
+    if (index === selectedIndex) {
+      label["completion-rectangle"] = {
+        bgcolor: $color("#DDDDDD")
+      };
+    }
+
     return label;
   });
 
@@ -730,13 +899,10 @@ class TabBrowser {
     this.userScript = userScript;
     this.currentTabIndex = 0;
     this.tabs = [];
+    this._pastURLs = [];
+    this._pastTitles = [];
 
     let browser = this;
-
-    const { generateKeyCommands } = require("scripts/system-remap");
-    const keymap = {
-      // "ctrl-g": () => alert("huga!")
-    };
 
     // Render UI
     $ui.render({
@@ -745,8 +911,6 @@ class TabBrowser {
         title: "iKeySnail",
         statusBarHidden: config.HIDE_STATUSBAR,
         navBarHidden: config.HIDE_TOOLBAR,
-        keyCommands: generateKeyCommands(keymap),
-        bgcolor: CONTAINER_BG
       },
       events: {
         appeared: sender => {
@@ -761,22 +925,82 @@ class TabBrowser {
         createWidgetExitButton(browser),
         {
           type: "view",
-          props: { bgcolor: TAB_LIST_BG },
+          props: { bgcolor: COLOR_TAB_LIST_BG },
           layout: function(make, view) {
-            make.top.equalTo(TOPBAR_HEIGHT + (VERTICAL ? 0 : TAB_HEIGHT));
-            make.left.equalTo(0);
-            make.height.equalTo(1);
-            make.width.equalTo(view.super.width);
+            if (VERTICAL) {
+              make.top.equalTo(TOPBAR_HEIGHT + (VERTICAL ? 0 : TAB_HEIGHT));
+              make.left.equalTo(0);
+              make.height.equalTo(1);
+              make.width.equalTo(view.super.width);
+            } else {
+              make.top.equalTo(TOPBAR_HEIGHT + (VERTICAL ? 0 : TAB_HEIGHT));
+              make.left.equalTo(0);
+              make.height.equalTo(1);
+              make.width.equalTo(view.super.width);
+            }
           }
         }
       ]
     });
   }
 
-  set suggestions(val) {
-    this._suggestionList = val;
-    this._suggestionIndex = -1;
-    this._updateCandidateView();
+  get history() {
+    return {
+      page: {
+        urls: this._pastURLs,
+        titles: this._pastTitles
+      },
+      bookmark: {}
+    };
+  }
+
+  set history(val) {
+    this._pastURLs = val.page.urls;
+    this._pastTitles = val.page.titles;
+    this._bookmark = val.bookmark;
+  }
+
+  addHistory(tabURL, tabName) {
+    this._pastURLs.push(tabURL);
+    this._pastTitles.push(tabName);
+  }
+
+  set suggestions(suggestionInfo) {
+    try {
+      this._suggestionList = null;
+      if (suggestionInfo) {
+        // Tabs
+        let tabs = suggestionInfo.tab.titles.map((title, index) => {
+          return {
+            value: suggestionInfo.tab.urls[index],
+            index: suggestionInfo.tab.indices[index],
+            title: title,
+            type: "tab"
+          };
+        });
+        // History
+        let history = suggestionInfo.history.titles.map((title, index) => {
+          return {
+            value: suggestionInfo.history.urls[index],
+            title: title,
+            type: "history"
+          };
+        });
+        // Google autocompletion
+        let completion = suggestionInfo.completion.map(title => ({
+          value: title,
+          type: "suggestion"
+        }));
+
+        // TODO: Order should be customizable
+        this._suggestionList = tabs.concat(history.concat(completion));
+      }
+
+      this._suggestionIndex = -1;
+      this._updateCandidateView();
+    } catch (x) {
+      console.error(x);
+    }
   }
 
   _updateCandidateView() {
@@ -808,9 +1032,15 @@ class TabBrowser {
       index = this._suggestionIndex;
     }
     if (index >= 0) {
-      $("url-input").text = this._suggestionList[index];
+      let cand = this._suggestionList[index];
+      if (cand.type === "tab") {
+        this.selectTab(cand.index);
+      } else {
+        $("url-input").text = cand.value;
+      }
     }
-    this.blurLocationBar();
+    // TODO: not blur?
+    // this.blurLocationBar();
   }
 
   selectNextCandidate() {
@@ -849,7 +1079,7 @@ class TabBrowser {
   }
 
   visitURL(url) {
-    url = understandURLLikeInput(url);
+    url = convertURLLikeInputToURL(url);
     this.selectedTab.visitURL(url);
     this.setURLView(url);
     this.selectedTab.select();
@@ -1041,6 +1271,8 @@ function startSession(urlToVisit) {
   } catch (x) {}
 
   let browser = new TabBrowser(readUserScript(), () => {
+    browser.history = loadHistory();
+
     if (lastTabs.length) {
       lastTabs.forEach(tabInfo => {
         let tab = new Tab(browser, tabInfo.url, browser.userScript);
@@ -1193,6 +1425,7 @@ function startSession(urlToVisit) {
         console.error(x);
       }
       saveTabInfo(browser);
+      saveHistory(browser);
     }
   });
 }
