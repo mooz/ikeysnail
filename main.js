@@ -17,16 +17,19 @@ const TOPBAR_FIRSTROW_OFFSET = 5;
 const URLBAR_HEIGHT = TOPBAR_HEIGHT - 10;
 const URLBAR_RATIO = 0.6;
 
-const CONTAINER_BG = $rgba(250, 250, 250, 0.9);
+// blue
+const COLOR_TOPBAR_BUTTON_FG = $color("#007AFF");
 
-const TAB_BG_SELECTED = $rgba(250, 250, 250, 0.9);
-const TAB_FG_SELECTED = $color("#000000");
+const COLOR_CONTAINER_BG = $rgba(250, 250, 250, 0.9);
 
-const TAB_BG_INACTIVE = $color("#cccccc");
-const TAB_FG_INACTIVE = $color("#666666");
+const COLOR_TAB_BG_SELECTED = $rgba(250, 250, 250, 0.9);
+const COLOR_TAB_FG_SELECTED = $color("#000000");
 
-const TAB_LIST_BG = $color("#bbbbbb");
-const URL_COLOR = "#2B9E46";
+const COLOR_TAB_BG_INACTIVE = $color("#cccccc");
+const COLOR_TAB_FG_INACTIVE = $color("#666666");
+
+const COLOR_TAB_LIST_BG = $color("#bbbbbb");
+const COLOR_URL_FG = "#2B9E46";
 
 function log(message) {
   if (config.DEBUG_CONSOLE) {
@@ -312,11 +315,13 @@ __keysnail__.runPanel(${JSON.stringify(candidates)}, {
 
 function createWidgetBookmarkListButton(browser) {
   return {
-    type: "label",
+    type: "button",
     props: {
-      text: "📖",
-      textColor: $rgba(0, 122, 255, 1),
-      font: $font(20),
+      icon: $icon(
+          "057",
+          COLOR_TOPBAR_BUTTON_FG,
+          $size(SIZE_TOPBAR_ICON_BUTTON, SIZE_TOPBAR_ICON_BUTTON)
+      ),
       bgcolor: $color("clear")
     },
     events: {
@@ -333,11 +338,13 @@ function createWidgetBookmarkListButton(browser) {
 
 function createWidgetShareButton(browser) {
   return {
-    type: "label",
+    type: "button",
     props: {
-      text: "🔗",
-      textColor: $rgba(0, 122, 255, 1),
-      font: $font(20),
+      icon: $icon(
+          "022",
+          COLOR_TOPBAR_BUTTON_FG,
+          $size(SIZE_TOPBAR_ICON_BUTTON, SIZE_TOPBAR_ICON_BUTTON)
+      ),
       bgcolor: $color("clear")
     },
     events: {
@@ -347,7 +354,7 @@ function createWidgetShareButton(browser) {
     },
     layout: make => {
       make.top.inset(TOPBAR_FIRSTROW_OFFSET);
-      make.left.inset(55);
+      make.right.inset(150);
     }
   };
 }
@@ -357,7 +364,7 @@ function createWidgetExitButton(browser) {
     type: "label",
     props: {
       text: "×",
-      textColor: $rgba(0, 122, 255, 1),
+      textColor: COLOR_TOPBAR_BUTTON_FG,
       font: $font(30),
       bgcolor: $color("clear")
     },
@@ -432,8 +439,8 @@ function createWidgetURLInput(browser) {
     type: "input",
     props: {
       id: "url-input",
-      textColor: $color(URL_COLOR),
-      // bgcolor: $color("EEEEEE"),
+      textColor: $color(COLOR_URL_FG),
+      //       bgcolor: $color("EEEEEE"),
       align: $align.center
     },
     layout: (make, view) => {
@@ -462,7 +469,7 @@ function createWidgetURLInput(browser) {
         sender.ks_shouldHideSuggestions = true;
         browser.suggestions = null;
         sender.align = $align.center;
-        sender.textColor = $color(URL_COLOR);
+        sender.textColor = $color(COLOR_URL_FG);
 
         if (!sender.ks_confirmed || /^[ \t]*$/.test(sender.text)) {
           // Recover original text
@@ -489,7 +496,7 @@ function createWidgetTabButton(browser) {
     type: "label",
     props: {
       text: "+",
-      textColor: $rgba(0, 122, 255, 1),
+      textColor: COLOR_TOPBAR_BUTTON_FG,
       font: $font(30),
       bgcolor: $color("clear")
     },
@@ -539,7 +546,7 @@ function createWidgetTabList(browser) {
           icon: $icon(
             "225",
             $rgba(140, 140, 140, 0.8),
-            $size(TAB_CLOSE_BUTTON_SIZE, TAB_CLOSE_BUTTON_SIZE)
+            $size(SIZE_TAB_CLOSE_ICON_BUTTON, SIZE_TAB_CLOSE_ICON_BUTTON)
           ),
           bgcolor: $color("clear")
         },
@@ -563,8 +570,8 @@ function createWidgetTabList(browser) {
           text: name
         },
         "tab-rectangle": {
-          bgcolor: TAB_BG_SELECTED,
-          textColor: TAB_FG_SELECTED,
+          bgcolor: COLOR_TAB_BG_SELECTED,
+          textColor: COLOR_TAB_FG_SELECTED,
           tabIndex: index
         }
       };
@@ -574,8 +581,8 @@ function createWidgetTabList(browser) {
           text: name
         },
         "tab-rectangle": {
-          bgcolor: TAB_BG_INACTIVE,
-          textColor: TAB_FG_INACTIVE,
+          bgcolor: COLOR_TAB_BG_INACTIVE,
+          textColor: COLOR_TAB_FG_INACTIVE,
           tabIndex: index
         },
         "close-button": {
@@ -620,7 +627,7 @@ function createWidgetTabList(browser) {
         // spacing: 0,
         template: tabTemplate,
         data: data,
-        bgcolor: TAB_LIST_BG,
+        bgcolor: COLOR_TAB_LIST_BG,
         borderWidth: 0
       },
       layout: (make, view) => {
@@ -771,7 +778,7 @@ function createWidgetCompletions(browser, candidates, selectedIndex) {
       rowHeight: COMP_HEIGHT,
       template: template,
       data: data,
-      bgColor: TAB_LIST_BG,
+      bgColor: COLOR_TAB_LIST_BG,
       borderWidth: 1,
       radius: 3,
       borderColor: $color("#EEEEEE")
@@ -911,6 +918,7 @@ class TabBrowser {
         title: "iKeySnail",
         statusBarHidden: config.HIDE_STATUSBAR,
         navBarHidden: config.HIDE_TOOLBAR,
+        bgcolor: COLOR_CONTAINER_BG
       },
       events: {
         appeared: sender => {
