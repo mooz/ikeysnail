@@ -1050,9 +1050,13 @@ function startSession(urlToVisit) {
           tab.load();
         }
       });
-      browser.selectTab(lastTabIndex);
+      if (urlToVisit) {
+        browser.createNewTab(urlToVisit, true);
+      } else {
+        browser.selectTab(lastTabIndex);
+      }
     } else {
-      browser.createNewTab(config.NEW_TAB_URL, true);
+      browser.createNewTab(urlToVisit || config.NEW_TAB_URL, true);
     }
   });
 
