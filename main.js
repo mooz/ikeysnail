@@ -482,6 +482,23 @@ function createWidgetTabList(browser) {
       events: {
         didSelect: (sender, indexPath) => {
           browser.selectTab(indexPath.row);
+        },
+        didLongPress: (sender, indexPath) => {
+          const commands = [
+            ["Copy", () => browser.copyTabInfo(indexPath.row)],
+            ["Close other tab", () => browser.closeTabsBesides(indexPath.row)]
+          ];
+          $ui.menu({
+            items: commands.map(c => c[0]),
+            handler: function(title, idx) {
+              if (idx >= 0) {
+                commands[idx][1]();
+              }
+            },
+            finished: function(cancelled) {
+              // nothing?
+            }
+          });
         }
       },
       props: {
@@ -614,6 +631,10 @@ class Tab {
   get selected() {
     const browser = this.parent;
     return this === browser.selectedTab;
+  }
+
+  get loaded() {
+    return this._loaded;
   }
 
   select() {
@@ -866,6 +887,25 @@ ${tab.url}
       )}?body=${encodeURIComponent(content)}`,
       true
     );
+  }
+
+  copyTabInfo(tabIndex) {
+    $clipboard.set({
+      type: "public.plain-text",
+      value: this.tabs[tabIndex].url
+    });
+  }
+
+  closeTabsBesides(tabIndexToRetain) {
+    let tabToRetain = this.tabs[tabIndexToRetain];
+    this.tabs.forEach((tab, index) => {
+      if (index !== tabIndexToRetain && tab.loaded) {
+        tab.visitURL(null); // Expect early GC
+        tab.element.remove();
+      }
+    });
+    this.tabs = [tabToRetain];
+    this.selectTab(0);
   }
 
   /**
