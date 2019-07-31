@@ -512,8 +512,8 @@ function createWidgetTabList(browser) {
       },
       layout: (make, view) => {
         make.width.equalTo(VERTICAL_TAB_WIDTH);
-        make.height.equalTo(view.super.height).offset(-TOPBAR_HEIGHT);
-        make.top.equalTo(TOPBAR_HEIGHT);
+        make.height.equalTo(view.super.height).offset(-(TOPBAR_HEIGHT + 1));
+        make.top.equalTo(TOPBAR_HEIGHT + 1);
         make.left.equalTo(0);
       }
     };
