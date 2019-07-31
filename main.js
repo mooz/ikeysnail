@@ -6,12 +6,23 @@ const VERTICAL_TAB_WIDTH = config.TAB_VERTICAL_WIDTH;
 const TOPBAR_HEIGHT = 35;
 const TAB_HEIGHT = 30;
 const TAB_FONT_SIZE = 13;
-const TAB_CLOSE_BUTTON_SIZE = 20;
-const TAB_BG_SELECTED = "#efefef";
-const TAB_FG_SELECTED = "#000000";
-const TAB_BG_INACTIVE = "#cccccc";
-const TAB_LIST_BG = "#bbbbbb";
-const TAB_FG_INACTIVE = "#666666";
+const TAB_CLOSE_BUTTON_SIZE = 15;
+
+const TOPBAR_FIRSTROW_OFFSET = 5;
+
+// URL Bar
+const URLBAR_HEIGHT = TOPBAR_HEIGHT - 10;
+const URLBAR_RATIO = 0.6;
+
+const CONTAINER_BG = $rgba(250, 250, 250, 0.9);
+
+const TAB_BG_SELECTED = $rgba(250, 250, 250, 0.9);
+const TAB_FG_SELECTED = $color("#000000");
+
+const TAB_BG_INACTIVE = $color("#cccccc");
+const TAB_FG_INACTIVE = $color("#666666");
+
+const TAB_LIST_BG = $color("#bbbbbb");
 const URL_COLOR = "#2B9E46";
 
 function log(message) {
@@ -50,7 +61,9 @@ function readMinified(prefix) {
 
 function loadTabInfo() {
   try {
-    let [tabURLs, tabIndex, tabNames] = JSON.parse($file.read("last-tabs.json").string.trim());
+    let [tabURLs, tabIndex, tabNames] = JSON.parse(
+      $file.read("last-tabs.json").string.trim()
+    );
     if (tabURLs.length !== tabNames.length) throw "Invalid";
     return [tabURLs, tabIndex, tabNames];
   } catch (x) {
@@ -84,6 +97,29 @@ function understandURLLikeInput(url) {
   }
   return url;
 }
+
+function getSuggestions(query) {
+  const completionURL =
+    "https://www.google.com/complete/search?client=chrome-omni&gs_ri=chrome-ext&oit=1&cp=1&pgcl=7&q=" +
+    encodeURIComponent(query);
+  return new Promise((resolve, reject) => {
+    $http.request({
+      method: "GET",
+      url: completionURL,
+      handler: function(resp) {
+        if (resp.error) {
+          reject(resp.error);
+        } else {
+          resolve(resp.data);
+        }
+      }
+    });
+  });
+}
+
+// ------------------------------------------------------------------- //
+// Widgets
+// ------------------------------------------------------------------- //
 
 function createWidgetTabContent(tab, url, userScript) {
   let props = {
@@ -159,8 +195,7 @@ function createWidgetTabContent(tab, url, userScript) {
         if (!url) {
           url = $clipboard.text;
         }
-        url = understandURLLikeInput(url);
-        tab.parent.createNewTab(url, true);
+        tab.parent.createNewTab(understandURLLikeInput(url), true);
       },
       selectTabsByPanel: () => {
         let candidates = tab.parent.tabs.map((tab, index) => ({
@@ -187,11 +222,11 @@ __keysnail__.runPanel(${JSON.stringify(candidates)}, {
       if (VERTICAL) {
         make.edges
           .equalTo(view.super)
-          .insets($insets(TOPBAR_HEIGHT, VERTICAL_TAB_WIDTH, 0, 0));
+          .insets($insets(TOPBAR_HEIGHT + 1, VERTICAL_TAB_WIDTH, 0, 0));
       } else {
         make.edges
           .equalTo(view.super)
-          .insets($insets(TOPBAR_HEIGHT + TAB_HEIGHT, 0, 0, 0));
+          .insets($insets(TOPBAR_HEIGHT + TAB_HEIGHT + 1, 0, 0, 0));
       }
     }
   };
@@ -212,7 +247,7 @@ function createWidgetBookmarkListButton(browser) {
       }
     },
     layout: make => {
-      make.top.inset(5);
+      make.top.inset(TOPBAR_FIRSTROW_OFFSET);
       make.right.inset(55);
     }
   };
@@ -233,7 +268,7 @@ function createWidgetShareButton(browser) {
       }
     },
     layout: make => {
-      make.top.inset(5);
+      make.top.inset(TOPBAR_FIRSTROW_OFFSET);
       make.left.inset(55);
     }
   };
@@ -261,22 +296,48 @@ function createWidgetExitButton(browser) {
 }
 
 function createWidgetURLInput(browser) {
+  const isURL = urlLike => /https?:\/\//.test(urlLike);
+
   let originalURL = null;
+
+  function debounce(func, interval = 500) {
+    let timer = null;
+    return (...args) => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+      timer = setTimeout(async () => {
+        func(...args);
+      }, interval);
+    };
+  }
+
+  const obtainSuggestions = debounce(async (query, sender) => {
+    const [_, suggestions] = await getSuggestions(query);
+    const NUM_CANDIDATE_MAX = 10;
+    if (!sender.ks_shouldHideSuggestions) {
+      browser.suggestions = suggestions.slice(0, NUM_CANDIDATE_MAX);
+    }
+  }, 200);
+
   return {
     type: "input",
     props: {
       id: "url-input",
       textColor: $color(URL_COLOR),
+      // bgcolor: $color("EEEEEE"),
       align: $align.center
     },
     layout: (make, view) => {
-      make.top.inset(3);
-      make.left.inset(100);
-      make.height.equalTo(TOPBAR_HEIGHT - 8);
-      make.width.equalTo(view.super.width).offset(-200);
+      make.top.inset(TOPBAR_FIRSTROW_OFFSET);
+      make.height.equalTo(URLBAR_HEIGHT);
+      make.width.equalTo(view.super.width).multipliedBy(URLBAR_RATIO);
+      make.centerX.equalTo(view.super.center);
     },
     events: {
       didBeginEditing: sender => {
+        sender.ks_confirmed = false;
+        sender.ks_shouldHideSuggestions = false;
         sender.align = $align.left;
         sender.textColor = $rgba(0, 0, 0, 1);
         originalURL = sender.text;
@@ -285,19 +346,30 @@ function createWidgetURLInput(browser) {
         browser.focusLocationBar();
       },
       returned: sender => {
+        sender.ks_confirmed = true;
         sender.blur();
       },
       didEndEditing: sender => {
+        sender.ks_shouldHideSuggestions = true;
+        browser.suggestions = null;
         sender.align = $align.center;
         sender.textColor = $color(URL_COLOR);
-        if (/^[ \t]*$/.test(sender.text)) {
+
+        if (!sender.ks_confirmed || /^[ \t]*$/.test(sender.text)) {
+          // Recover original text
           sender.text = originalURL;
         } else if (originalURL !== sender.text) {
-          browser.visitURL(understandURLLikeInput(sender.text));
+          browser.visitURL(sender.text);
           // TODO: Dirty hack for getting focus on the current tab.
           // becomeFirstResponder of the tab doesn't work. Better way?
           setTimeout(() => browser.selectedTab.select(), 100);
         }
+      },
+      changed: sender => {
+        if (isURL(sender.text)) {
+          return;
+        }
+        obtainSuggestions(sender.text, sender);
       }
     }
   };
@@ -330,15 +402,26 @@ function createWidgetTabList(browser) {
     props: {},
     views: [
       {
-        type: "label",
+        type: "view",
         props: {
-          id: "tab-name",
-          align: $align.center,
-          font: $font(TAB_FONT_SIZE),
-          borderWidth: 1,
-          borderColor: $color("#777777")
+          id: "tab-rectangle"
         },
-        layout: $layout.fill
+        layout: $layout.fill,
+        views: [
+          {
+            type: "label",
+            props: {
+              id: "tab-name",
+              align: $align.center,
+              font: $font(TAB_FONT_SIZE)
+            },
+            layout: (make, view) => {
+              make.height.equalTo(view.super.height);
+              make.width.equalTo(view.super.width).offset(-30);
+              make.left.equalTo(view.super.left).offset(25);
+            }
+          }
+        ]
       },
       {
         type: "button",
@@ -357,8 +440,8 @@ function createWidgetTabList(browser) {
           }
         },
         layout: (make, view) => {
-          make.left.equalTo(view.super.left).offset(5);
-          make.top.inset(5);
+          make.left.equalTo(view.super.left).offset(TOPBAR_FIRSTROW_OFFSET);
+          make.top.inset(TOPBAR_FIRSTROW_OFFSET);
         }
       }
     ]
@@ -368,18 +451,22 @@ function createWidgetTabList(browser) {
     if (index === browser.currentTabIndex) {
       return {
         "tab-name": {
-          text: name,
-          bgcolor: $color(TAB_BG_SELECTED),
-          textColor: $color(TAB_FG_SELECTED),
+          text: name
+        },
+        "tab-rectangle": {
+          bgcolor: TAB_BG_SELECTED,
+          textColor: TAB_FG_SELECTED,
           tabIndex: index
         }
       };
     } else {
       return {
         "tab-name": {
-          text: name,
-          bgcolor: $color(TAB_BG_INACTIVE),
-          textColor: $color(TAB_FG_INACTIVE),
+          text: name
+        },
+        "tab-rectangle": {
+          bgcolor: TAB_BG_INACTIVE,
+          textColor: TAB_FG_INACTIVE,
           tabIndex: index
         },
         "close-button": {
@@ -395,6 +482,27 @@ function createWidgetTabList(browser) {
       events: {
         didSelect: (sender, indexPath) => {
           browser.selectTab(indexPath.row);
+        },
+        didLongPress: (sender, indexPath) => {
+          const commands = [
+            ["Copy", () => browser.copyTabInfo(indexPath.row)],
+            ["Close other tabs", () => browser.closeTabsBesides(indexPath.row)],
+            [
+              "Open in external browser",
+              () => browser.openInExternalBrowser(indexPath.row)
+            ]
+          ];
+          $ui.menu({
+            items: commands.map(c => c[0]),
+            handler: function(title, idx) {
+              if (idx >= 0) {
+                commands[idx][1]();
+              }
+            },
+            finished: function(cancelled) {
+              // nothing?
+            }
+          });
         }
       },
       props: {
@@ -403,14 +511,13 @@ function createWidgetTabList(browser) {
         // spacing: 0,
         template: tabTemplate,
         data: data,
-        bgcolor: $color(TAB_LIST_BG),
-        borderWidth: 1,
-        borderColor: $color(TAB_FG_INACTIVE)
+        bgcolor: TAB_LIST_BG,
+        borderWidth: 0
       },
       layout: (make, view) => {
         make.width.equalTo(VERTICAL_TAB_WIDTH);
-        make.height.equalTo(view.super.height).offset(-TOPBAR_HEIGHT);
-        make.top.equalTo(TOPBAR_HEIGHT);
+        make.height.equalTo(view.super.height).offset(-(TOPBAR_HEIGHT + 1));
+        make.top.equalTo(TOPBAR_HEIGHT + 1);
         make.left.equalTo(0);
       }
     };
@@ -440,6 +547,72 @@ function createWidgetTabList(browser) {
   }
 }
 
+function createWidgetCompletions(browser, candidates, selectedIndex) {
+  const COMP_HEIGHT = TAB_HEIGHT + 5;
+
+  const template = {
+    props: {},
+    views: [
+      {
+        type: "label",
+        props: {
+          id: "completion-label",
+          align: $align.left,
+          font: $font(18),
+          borderWidth: 1,
+          textColor: $color("#000000"),
+          borderColor: $color("#FFFFFF"),
+          bgcolor: $color("#FFFFFF")
+        },
+        layout: (make, view) => {
+          make.top.inset(0);
+          make.left.inset(0);
+          make.height.equalTo(view.super.height);
+          make.width.equalTo(view.super.width);
+        }
+      }
+    ]
+  };
+
+  const data = candidates.map((name, index) => {
+    let label = {
+      "completion-label": {
+        text: " 🔎 " + name,
+        tabIndex: index
+      }
+    };
+    if (index === selectedIndex) {
+      label["completion-label"].bgcolor = $color("#DDDDDD");
+    }
+    return label;
+  });
+
+  return {
+    type: "list",
+    events: {
+      didSelect: (sender, indexPath) => {
+        browser.decideCandidate(indexPath.row);
+      }
+    },
+    props: {
+      id: "completion-list",
+      rowHeight: COMP_HEIGHT,
+      template: template,
+      data: data,
+      bgColor: TAB_LIST_BG,
+      borderWidth: 1,
+      radius: 3,
+      borderColor: $color("#EEEEEE")
+    },
+    layout: (make, view) => {
+      make.top.inset(TOPBAR_HEIGHT - 4);
+      make.height.equalTo(COMP_HEIGHT * candidates.length);
+      make.width.equalTo(view.super.width).multipliedBy(URLBAR_RATIO);
+      make.centerX.equalTo(view.super.center);
+    }
+  };
+}
+
 // -------------------------------------------------------------------- //
 // Tab class
 // -------------------------------------------------------------------- //
@@ -462,6 +635,10 @@ class Tab {
   get selected() {
     const browser = this.parent;
     return this === browser.selectedTab;
+  }
+
+  get loaded() {
+    return this._loaded;
   }
 
   select() {
@@ -566,7 +743,7 @@ class TabBrowser {
         statusBarHidden: config.HIDE_STATUSBAR,
         navBarHidden: config.HIDE_TOOLBAR,
         keyCommands: generateKeyCommands(keymap),
-        bgcolor: $rgba(250, 250, 250, 0.9)
+        bgcolor: CONTAINER_BG
       },
       events: {
         appeared: sender => {
@@ -578,9 +755,82 @@ class TabBrowser {
         createWidgetBookmarkListButton(browser),
         createWidgetShareButton(browser),
         createWidgetURLInput(browser),
-        createWidgetExitButton(browser)
+        createWidgetExitButton(browser),
+        {
+          type: "view",
+          props: { bgcolor: TAB_LIST_BG },
+          layout: function(make, view) {
+            make.top.equalTo(TOPBAR_HEIGHT + (VERTICAL ? 0 : TAB_HEIGHT));
+            make.left.equalTo(0);
+            make.height.equalTo(1);
+            make.width.equalTo(view.super.width);
+          }
+        }
       ]
     });
+  }
+
+  set suggestions(val) {
+    this._suggestionList = val;
+    this._suggestionIndex = -1;
+    this._updateCandidateView();
+  }
+
+  _updateCandidateView() {
+    function removeIfExists(id) {
+      try {
+        let element = $(id);
+        if (element) {
+          element.remove();
+        }
+      } catch (x) {
+        log("Error in removing tab list: " + x);
+      }
+    }
+    removeIfExists("completion-list");
+    if (this._suggestionList) {
+      this._appendElementToView(
+        createWidgetCompletions(
+          this,
+          this._suggestionList,
+          this._suggestionIndex
+        )
+      );
+    }
+  }
+
+  decideCandidate(index) {
+    $("url-input").ks_confirmed = true;
+    if (typeof index !== "number") {
+      index = this._suggestionIndex;
+    }
+    if (index >= 0) {
+      $("url-input").text = this._suggestionList[index];
+    }
+    this.blurLocationBar();
+  }
+
+  selectNextCandidate() {
+    if (this._suggestionIndex < 0) {
+      this._suggestionIndex = 0;
+    } else {
+      this._suggestionIndex =
+        (this._suggestionIndex + 1) % this._suggestionList.length;
+    }
+    this._updateCandidateView();
+  }
+
+  selectPreviousCandidate() {
+    if (this._suggestionIndex < 0) {
+      this._suggestionIndex = this._suggestionList.length - 1;
+    } else {
+      if (this._suggestionIndex - 1 < 0) {
+        this._suggestionIndex = this._suggestionList.length - 1;
+      } else {
+        this._suggestionIndex = this._suggestionIndex - 1;
+      }
+    }
+    this._updateCandidateView();
   }
 
   get selectedTab() {
@@ -596,6 +846,7 @@ class TabBrowser {
   }
 
   visitURL(url) {
+    url = understandURLLikeInput(url);
     this.selectedTab.visitURL(url);
     this.setURLView(url);
     this.selectedTab.select();
@@ -617,6 +868,11 @@ class TabBrowser {
       .$selectAll();
   }
 
+  blurLocationBar() {
+    $("url-input").blur();
+    this.selectedTab.select();
+  }
+
   share() {
     let tab = this.selectedTab;
     $share.sheet([tab.url, tab.title]);
@@ -635,6 +891,29 @@ ${tab.url}
       )}?body=${encodeURIComponent(content)}`,
       true
     );
+  }
+
+  copyTabInfo(tabIndex) {
+    $clipboard.set({
+      type: "public.plain-text",
+      value: this.tabs[tabIndex].url
+    });
+  }
+
+  openInExternalBrowser(tabIndex) {
+    $app.openURL(this.tabs[tabIndex].url);
+  }
+
+  closeTabsBesides(tabIndexToRetain) {
+    let tabToRetain = this.tabs[tabIndexToRetain];
+    this.tabs.forEach((tab, index) => {
+      if (index !== tabIndexToRetain && tab.loaded) {
+        tab.visitURL(null); // Expect early GC
+        tab.element.remove();
+      }
+    });
+    this.tabs = [tabToRetain];
+    this.selectTab(0);
   }
 
   /**
@@ -770,10 +1049,14 @@ function startSession(urlToVisit) {
         if (!config.TAB_LAZY_LOADING) {
           tab.load();
         }
-      });      
-      browser.selectTab(lastTabIndex);
+      });
+      if (urlToVisit) {
+        browser.createNewTab(urlToVisit, true);
+      } else {
+        browser.selectTab(lastTabIndex);
+      }
     } else {
-      browser.createNewTab(config.NEW_TAB_URL, true);
+      browser.createNewTab(urlToVisit || config.NEW_TAB_URL, true);
     }
   });
 
@@ -789,48 +1072,110 @@ function startSession(urlToVisit) {
         }
       });
 
+      function flip(obj) {
+        const ret = {};
+        Object.keys(obj).forEach(key => {
+          ret[obj[key]] = key;
+        });
+        return ret;
+      }
+
+      let ctrlKey = false;
+      let metaKey = false;
+
+      let inputElement = $("url-input").runtimeValue();
+
+      const key = {
+        meta: 227,
+        Escape: 41,
+        Enter: 40,
+        ctrl: 224,
+        " ": 44
+      };
+      for (let i = 0; i < 27; ++i) {
+        key[String.fromCharCode(97 + i)] = 4 + i;
+      }
+      Object.freeze(key);
+      const codeToKey = flip(key);
+
+      let urlBarCommands = {
+        "ctrl-p": () => browser.selectPreviousCandidate(),
+        "ctrl-n": () => browser.selectNextCandidate(),
+        "ctrl-m": () => browser.decideCandidate(),
+        "ctrl-g": () => browser.blurLocationBar(),
+        Escape: () => browser.blurLocationBar()
+      };
+
+      let defaultCommands = {
+        "ctrl-meta-j": () => browser.selectNextTab(),
+        "ctrl-meta-k": () => browser.selectPreviousTab(),
+        "meta-l": () => browser.focusLocationBar()
+      };
+
       if (config.CAPTURE_CTRL_SPACE) {
-        let ctrlKey = false;
-        // Workaround for capturing Ctrl-Space
-        $define({
-          type: "WKWebView",
-          // type: "UIApplication",
-          events: {
-            // Swizzling handleKeyUIEvent doesn't work. We need to swizzle the private one (_handleXXX).
-            "_handleKeyUIEvent:": evt => {
-              const P = 19;
-              const N = 17;
-              const ESC = 41;
-              const CTRL = 224;
-              const G = 10;
-              const SPACE = 44;
-              let keyCode = evt.$__keyCode();
-              let pressed = evt.$__isKeyDown();
-              if (keyCode === CTRL) {
-                ctrlKey = pressed;
-              } else if (keyCode === SPACE) {
-                // Space key.
-                if (ctrlKey) {
-                  if (pressed) {
-                    // Ctrl + Space. Prevent default action by returning null.
-                    browser.selectedTab.dispatchCtrlSpace();
-                  }
-                  return null;
-                }
-              }
+        defaultCommands["ctrl- "] = () =>
+          browser.selectedTab.dispatchCtrlSpace();
+      }
+
+      // Workaround for capturing Ctrl-Space
+      $define({
+        // type: "WKWebView",
+        type: "UIApplication",
+        events: {
+          // Swizzling handleKeyUIEvent doesn't work. We need to swizzle the private one (_handleXXX).
+          "_handleKeyUIEvent:": evt => {
+            const keyCode = evt.$__keyCode();
+            const pressed = evt.$__isKeyDown();
+            const keyString = codeToKey[keyCode];
+
+            if (!codeToKey.hasOwnProperty(keyCode)) {
               return self.$ORIG__handleKeyUIEvent(evt);
             }
+
+            // Decide keymap
+            let commands = defaultCommands;
+            if (inputElement.$isFirstResponder()) {
+              commands = urlBarCommands;
+            }
+
+            // Exec commands
+            if (keyCode === key.ctrl) {
+              ctrlKey = pressed;
+            } else if (keyCode === key.meta) {
+              metaKey = pressed;
+            } else {
+              let completeKeyString = keyString;
+              if (metaKey) completeKeyString = "meta-" + completeKeyString;
+              if (ctrlKey) completeKeyString = "ctrl-" + completeKeyString;
+
+              if (commands.hasOwnProperty(completeKeyString)) {
+                if (
+                  completeKeyString === "ctrl-m" &&
+                  inputElement.$markedTextRange()
+                ) {
+                  // TODO: doesn't work
+                  return self.$ORIG__handleKeyUIEvent(evt);
+                }
+
+                if (pressed) {
+                  // $ui.toast("Exec command for " + completeKeyString);
+                  try {
+                    commands[completeKeyString]();
+                  } catch (x) {}
+                }
+                return null;
+              }
+            }
+            return self.$ORIG__handleKeyUIEvent(evt);
           }
-        });
-      }
+        }
+      });
     },
     exit: () => {
       try {
         $objc("RedBoxCore").$cleanClass("UIResponder");
-        if (config.CAPTURE_CTRL_SPACE) {
-          $objc("RedBoxCore").$cleanClass("WKWebView");
-          // $objc("RedBoxCore").$cleanClass("UIApplication");
-        }
+        // $objc("RedBoxCore").$cleanClass("WKWebView");
+        $objc("RedBoxCore").$cleanClass("UIApplication");
       } catch (x) {
         console.error(x);
       }

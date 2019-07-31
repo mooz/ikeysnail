@@ -8,9 +8,7 @@
   }
 
   function message(msg, duration) {
-    if (config.DEBUG_SHOW_MESSAGE) {
-      $notify("message", { message: msg, duration: duration });
-    }
+    $notify("message", { message: msg, duration: duration });
   }
 
   function inIframe() {
@@ -484,6 +482,9 @@
       });
       const title = document.querySelector("head title");
       titleObserver.observe(title, { childList: true });
+      window.alert = function(msg) {
+        message(msg);
+      };
     }
 
     if (document.querySelector(".CodeMirror")) {
@@ -997,7 +998,7 @@
     startSiteSelector: () => {
       keysnail.runPanel(
         config.sites.map(site => ({
-          text: `📖  ${site.alias} (${site.url})`,
+          text: `📖  ${site.alias}`,
           url: site.url
         })),
         { toggle: true }
@@ -1044,16 +1045,17 @@
      display: block !important;
      box-shadow: 0px 2px 5px rgba(0,0,0,0.8) !important;
      position: fixed !important;
-     top: 10% !important;
+     top: 5% !important;
      left: 10% !important;
      padding: 1em !important;
-     min-width: 80% !important;
+     width: 80% !important;
      height: 80% !important;
      background: white !important;
      opacity: 0.95 !important;
-     border: 1px solid black !important;
+     border: 1px solid rgba(0,0,0,0.5) !important;
      border-radius: 1ex !important;
      z-index: ${Z_INDEX_MAX - 10} !important;
+     text-overflow: ellipsis !important; 
 }
 #keysnail-popup.hidden {
      display: none !important;
@@ -1074,23 +1076,33 @@
      border-radius: 3px;
      font-size: 16px;
      outline: none !important;
-     background-color: #d8ecff;
+     background-color: rgba(0,0,0,0.05);
  }
- #keysnail-popup-query:focus {
-     background-color: #d8ecff;
- } 
  
  #keysnail-popup a {
      display: none;
      color: black !important;
      padding: 0.5em 2em !important;
-     border-bottom: 1px solid black !important;
+     border-bottom: 1px solid rgba(0,0,0,0.3) !important;
+     text-overflow: ellipsis;
+     overflow: hidden;
  }
+
+#keysnail-popup a:after { 
+     content: attr(href);
+     display: block;
+     font-size: 12px;
+     text-overflow: ellipsis;
+     overflow: hidden;
+     color: rgba(0,0,0,0.7);
+ }
+
  #keysnail-popup a.matched {
      display: block !important;
  }
+
  #keysnail-popup a.selected {
-     background-color: pink;
+     background-color: rgba(0,0,0,0.15);
  }
 .keysnail-hint {
         background-color: yellow !important;
