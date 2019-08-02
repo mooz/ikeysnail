@@ -16,6 +16,14 @@ const setup = (config, keysnail) => {
 
   config.SWAP_COMMAND_OPTION = false;
 
+  // Configure order of location bar suggestion
+  config.LOCATIONBAR_SUGGESTIONS = [
+      "SuggestionTab",
+      "SuggestionBookmark",
+      "SuggestionHistory",
+      "SuggestionWebQuery",
+  ];
+
   // See
   // https://developer.mozilla.org/ja/docs/Web/API/KeyboardEvent/key/Key_Values
 

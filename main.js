@@ -1,9 +1,17 @@
 const config = { sites: [] };
 require("./strings/settings").setup(config, { marked: () => null });
 
+const {Component} = require("scripts/Component");
+const {Tab} = require("scripts/TabBrowser/Tab/Tab");
+const {ToolBar} = require("scripts/TabBrowser/ToolBar/ToolBar");
+const {ToolBarButton} = require("scripts/TabBrowser/ToolBar/ToolBarButton");
+const {ToolBarButtonContainer} = require("scripts/TabBrowser/ToolBar/ToolBarButtonContainer");
+const {LocationBar} = require("./scripts/TabBrowser/ToolBar/LocationBar/LocationBar");
+const {LocationBarCompletion} = require("./scripts/TabBrowser/ToolBar/LocationBar/LocationBarCompletion");
+
 const VERTICAL = config.TAB_VERTICAL;
 const VERTICAL_TAB_WIDTH = config.TAB_VERTICAL_WIDTH;
-const TOPBAR_HEIGHT = 35;
+const TOPBAR_HEIGHT = 50;
 const TAB_HEIGHT = 30;
 
 const SIZE_TAB_FONT = 13;
@@ -12,10 +20,6 @@ const SIZE_TAB_CLOSE_ICON_BUTTON = 15;
 const SIZE_TOPBAR_ICON_BUTTON = 18;
 
 const TOPBAR_FIRSTROW_OFFSET = 5;
-
-// URL Bar
-const URLBAR_HEIGHT = TOPBAR_HEIGHT - 10;
-const URLBAR_RATIO = 0.6;
 
 // blue
 const COLOR_TOPBAR_BUTTON_FG = $color("#007AFF");
@@ -29,31 +33,10 @@ const COLOR_TAB_BG_INACTIVE = $color("#cccccc");
 const COLOR_TAB_FG_INACTIVE = $color("#666666");
 
 const COLOR_TAB_LIST_BG = $color("#bbbbbb");
-const COLOR_URL_FG = "#2B9E46";
 
 function log(message) {
   if (config.DEBUG_CONSOLE) {
     console.log(message);
-  }
-}
-
-function evalScript(tab, contentScript, promisify = true) {
-  if (promisify) {
-    return new Promise((resolve, reject) => {
-      tab.element.eval({
-        script: contentScript,
-        handler: (result, err) => {
-          if (err || typeof result === "object") {
-            reject(err);
-          } else {
-            resolve(result);
-          }
-        }
-      });
-    });
-  } else {
-    tab.element.eval({ script: contentScript });
-    return null;
   }
 }
 
@@ -144,374 +127,6 @@ function convertURLLikeInputToURL(url) {
   return url;
 }
 
-function getQueryCompletionsFromWeb(query) {
-  const completionURL =
-    "https://www.google.com/complete/search?client=chrome-omni&gs_ri=chrome-ext&oit=1&cp=1&pgcl=7&q=" +
-    encodeURIComponent(query);
-  return new Promise((resolve, reject) => {
-    $http.request({
-      method: "GET",
-      url: completionURL,
-      handler: function(resp) {
-        if (resp.error) {
-          reject(resp.error);
-        } else {
-          resolve(resp.data);
-        }
-      }
-    });
-  });
-}
-
-// TODO: Make the off-the-ui-thread
-// TODO: Or use sqlite!
-function findPageEntriesByQuery(query, urls, titles,
-                                reverse=false,
-                                caseInsensitive=false,
-                                RESULTS_COUNT_LIMIT=5) {
-  if (caseInsensitive) {
-    query = query.toLowerCase();
-  }
-
-  return new Promise((resolve, reject) => {
-    let matchedIndices = [];
-    let index;
-    for (let i = 0; i < urls.length; ++i) {
-      // Reverse order (e.g., for histories, it's natural to show last ones)
-      index = reverse ? urls.length - 1 - i : i;
-      // Don't match to http part (because it's obvious)
-      let url = urls[index].replace(/^https?:\/\//, "");
-      let title = titles[index];
-      if (caseInsensitive) {
-        title = title.toLowerCase();
-      }
-      if (url.indexOf(query) >= 0 || title.indexOf(query) >= 0) {
-        matchedIndices.push(index);
-        if (matchedIndices.length >= RESULTS_COUNT_LIMIT) {
-          resolve(matchedIndices);
-          return;
-        }
-      }
-    }
-    resolve(matchedIndices);
-  });
-}
-
-// ------------------------------------------------------------------- //
-// Widgets
-// ------------------------------------------------------------------- //
-
-function createWidgetTabContent(tab, url, userScript) {
-  let props = {
-    id: tab.id,
-    ua: config.USER_AGENT,
-    script: userScript,
-    hidden: false,
-    url: url
-  };
-
-  return {
-    type: "web",
-    props: props,
-    events: {
-      log: ({ message }) => {
-        if (config.DEBUG_CONSOLE) {
-          log(message);
-        }
-      },
-      titleDetermined: ({ title }) => {
-        tab.title = title;
-        tab.parent.addHistory(tab.url, tab.title);
-      },
-      didFinish: async sender => {
-        // Nothing?
-      },
-      didStart: sender => {
-        if (tab.selected) {
-          tab.parent.setURLView(sender.url);
-        }
-        tab.title = "Loading ...";
-      },
-      urlDidChange: async sender => {
-        if (tab.selected) {
-          tab.parent.setURLView(sender.url);
-        }
-        tab.title = await evalScript(tab, "document.title", true);
-      },
-      exitApplication: () => {
-        $app.close();
-      },
-      share: () => tab.parent.share(),
-      scrap: () => tab.parent.scrap(),
-      message: ({ message, duration }) => {
-        $ui.toast(message, duration || 3);
-      },
-      paste: () => {
-        evalScript(
-          tab,
-          `__keysnail__.insertText('${escape($clipboard.text)}', true)`,
-          false
-        );
-      },
-      closeTab: () => {
-        tab.parent.closeTab(tab);
-      },
-      createNewTab: () => {
-        tab.parent.createNewTab(null, true);
-      },
-      selectNextTab: () => {
-        tab.parent.selectNextTab();
-      },
-      selectPreviousTab: () => {
-        tab.parent.selectPreviousTab();
-      },
-      focusLocationBar: () => {
-        tab.parent.focusLocationBar();
-      },
-      copyText: ({ text }) => {
-        $clipboard.set({ type: "public.plain-text", value: text });
-      },
-      openClipboardURL: async () => {
-        let url = await evalScript(tab, `__keysnail__.getSelectedText()`);
-        if (!url) {
-          url = $clipboard.text;
-        }
-        tab.parent.createNewTab(convertURLLikeInputToURL(url), true);
-      },
-      selectTabsByPanel: () => {
-        let candidates = tab.parent.tabs.map((tab, index) => ({
-          text: tab.title,
-          url: tab.url
-        }));
-        let initialIndex = tab.parent.tabs.indexOf(tab);
-        evalScript(
-          tab,
-          `
-__keysnail__.runPanel(${JSON.stringify(candidates)}, {
-  toggle: true,
-  initialIndex: ${initialIndex},
-  action: index => $notify("selectTabByIndex", { index })
-});
-        `
-        );
-      },
-      selectTabByIndex: ({ index }) => {
-        tab.parent.selectTab(index);
-      }
-    },
-    layout: (make, view) => {
-      if (VERTICAL) {
-        make.edges
-          .equalTo(view.super)
-          .insets($insets(TOPBAR_HEIGHT + 1, VERTICAL_TAB_WIDTH, 0, 0));
-      } else {
-        make.edges
-          .equalTo(view.super)
-          .insets($insets(TOPBAR_HEIGHT + TAB_HEIGHT + 1, 0, 0, 0));
-      }
-    }
-  };
-}
-
-function createWidgetBookmarkListButton(browser) {
-  return {
-    type: "button",
-    props: {
-      icon: $icon(
-          "057",
-          COLOR_TOPBAR_BUTTON_FG,
-          $size(SIZE_TOPBAR_ICON_BUTTON, SIZE_TOPBAR_ICON_BUTTON)
-      ),
-      bgcolor: $color("clear")
-    },
-    events: {
-      tapped: async () => {
-        browser.showBookmark();
-      }
-    },
-    layout: make => {
-      make.top.inset(TOPBAR_FIRSTROW_OFFSET);
-      make.right.inset(55);
-    }
-  };
-}
-
-function createWidgetShareButton(browser) {
-  return {
-    type: "button",
-    props: {
-      icon: $icon(
-          "022",
-          COLOR_TOPBAR_BUTTON_FG,
-          $size(SIZE_TOPBAR_ICON_BUTTON, SIZE_TOPBAR_ICON_BUTTON)
-      ),
-      bgcolor: $color("clear")
-    },
-    events: {
-      tapped: async () => {
-        browser.share();
-      }
-    },
-    layout: make => {
-      make.top.inset(TOPBAR_FIRSTROW_OFFSET);
-      make.right.inset(150);
-    }
-  };
-}
-
-function createWidgetExitButton(browser) {
-  return {
-    type: "label",
-    props: {
-      text: "×",
-      textColor: COLOR_TOPBAR_BUTTON_FG,
-      font: $font(30),
-      bgcolor: $color("clear")
-    },
-    events: {
-      tapped: async () => {
-        $app.close();
-      }
-    },
-    layout: make => {
-      make.top.inset(-3);
-      make.left.inset(15);
-    }
-  };
-}
-
-function createWidgetURLInput(browser) {
-  const isURL = urlLike => /https?:\/\//.test(urlLike);
-
-  let originalURL = null;
-
-  function debounce(func, interval = 500) {
-    let timer = null;
-    return (...args) => {
-      if (timer) {
-        clearTimeout(timer);
-      }
-      timer = setTimeout(async () => {
-        func(...args);
-      }, interval);
-    };
-  }
-
-  const obtainSuggestions = debounce(async (query, sender) => {
-    // TODO: Add bookmark search (sites).
-    const [[_, suggestions], historyIndices, tabIndices] = await Promise.all([
-      getQueryCompletionsFromWeb(query),
-      findPageEntriesByQuery(
-        query,
-        browser._pastURLs,
-        browser._pastTitles,
-        (reverse = true),
-        (caseInsensitive = true)
-      ),
-      findPageEntriesByQuery(
-        query,
-        browser.tabs.map(tab => tab.url),
-        browser.tabs.map(tab => tab.title),
-        (reverse = false),
-        (caseInsensitive = true)
-      )
-    ]);
-
-    const NUM_CANDIDATE_MAX = 5;
-
-    if (!sender.ks_shouldHideSuggestions) {
-      browser.suggestions = {
-        completion: suggestions.slice(0, NUM_CANDIDATE_MAX),
-        history: {
-          urls: historyIndices.map(i => browser._pastURLs[i]),
-          titles: historyIndices.map(i => browser._pastTitles[i])
-        },
-        tab: {
-          indices: tabIndices,
-          urls: tabIndices.map(i => browser.tabs[i].url),
-          titles: tabIndices.map(i => browser.tabs[i].title)
-        }
-      };
-    }
-  }, 200);
-
-  return {
-    type: "input",
-    props: {
-      id: "url-input",
-      textColor: $color(COLOR_URL_FG),
-      //       bgcolor: $color("EEEEEE"),
-      align: $align.center
-    },
-    layout: (make, view) => {
-      make.top.inset(TOPBAR_FIRSTROW_OFFSET);
-      make.height.equalTo(URLBAR_HEIGHT);
-      make.width.equalTo(view.super.width).multipliedBy(URLBAR_RATIO);
-      make.centerX.equalTo(view.super.center);
-    },
-    events: {
-      didBeginEditing: sender => {
-        sender.ks_confirmed = false;
-        sender.ks_shouldHideSuggestions = false;
-        sender.align = $align.left;
-        sender.textColor = $rgba(0, 0, 0, 1);
-        originalURL = sender.text;
-      },
-      tapped: sender => {
-        browser.focusLocationBar();
-      },
-      returned: sender => {
-        sender.ks_confirmed = true;
-        browser.decideCandidate();
-        sender.blur();
-      },
-      didEndEditing: sender => {
-        sender.ks_shouldHideSuggestions = true;
-        browser.suggestions = null;
-        sender.align = $align.center;
-        sender.textColor = $color(COLOR_URL_FG);
-
-        if (!sender.ks_confirmed || /^[ \t]*$/.test(sender.text)) {
-          // Recover original text
-          sender.text = originalURL;
-        } else if (originalURL !== sender.text) {
-          browser.visitURL(sender.text);
-          // TODO: Dirty hack for getting focus on the current tab.
-          // becomeFirstResponder of the tab doesn't work. Better way?
-          setTimeout(() => browser.selectedTab.select(), 100);
-        }
-      },
-      changed: sender => {
-        if (isURL(sender.text)) {
-          return;
-        }
-        obtainSuggestions(sender.text, sender);
-      }
-    }
-  };
-}
-
-function createWidgetTabButton(browser) {
-  return {
-    type: "label",
-    props: {
-      text: "+",
-      textColor: COLOR_TOPBAR_BUTTON_FG,
-      font: $font(30),
-      bgcolor: $color("clear")
-    },
-    events: {
-      tapped: async () => {
-        browser.createNewTab(null, true);
-      }
-    },
-    layout: make => {
-      make.top.inset(-5);
-      make.right.inset(15);
-    }
-  };
-}
-
 function createWidgetTabList(browser) {
   const tabNames = browser.tabs.map(tab => tab.title);
   const tabTemplate = {
@@ -529,7 +144,7 @@ function createWidgetTabList(browser) {
             props: {
               id: "tab-name",
               align: $align.center,
-              font: $font(TAB_FONT_SIZE)
+              font: $font(SIZE_TAB_FONT)
             },
             layout: (make, view) => {
               make.height.equalTo(view.super.height);
@@ -663,293 +278,104 @@ function createWidgetTabList(browser) {
   }
 }
 
-function createWidgetCompletions(browser, candidates, selectedIndex) {
-  const LABEL_HEIGHT = TAB_HEIGHT + 5;
-  const COMP_HEIGHT = LABEL_HEIGHT + 5;
-
-  const template = {
-    props: {},
-    views: [
-      {
-        type: "view",
-        props: {
-          id: "completion-rectangle",
-          bgcolor: $color("#FFFFFF")
-        },
-        layout: $layout.fill
-      },
-      {
-        type: "button",
-        props: {
-          id: "completion-icon",
-          bgcolor: $color("clear")
-        },
-        layout: (make, view) => {
-          make.top.inset(10);
-          make.left.inset(10);
-        }
-      },
-      {
-        type: "label",
-        props: {
-          id: "completion-label",
-          align: $align.left,
-          font: $font(15),
-          borderWidth: 0,
-          textColor: $color("#000000")
-        },
-        layout: (make, view) => {
-          make.top.inset(3);
-          make.left.inset(32);
-          make.width.equalTo(view.super.width);
-        }
-      },
-      {
-        type: "label",
-        props: {
-          id: "completion-url",
-          align: $align.left,
-          font: $font(12),
-          textColor: $rgba(0, 0, 0, 0.6)
-        },
-        layout: (make, view) => {
-          make.bottom.inset(3);
-          make.left.inset(32);
-          make.width.equalTo(view.super.width);
-        }
-      }
-    ]
-  };
-
-  const data = candidates.map((candidate, index) => {
-    let label = null;
-    if (candidate.type === "suggestion") {
-      label = {
-        "completion-label": {
-          text: candidate.value,
-          tabIndex: index
-        },
-        "completion-url": {
-          text: "suggested by Google"
-        },
-        "completion-icon": {
-          icon: $icon("023", $rgba(140, 140, 140, 0.8), $size(13, 13))
-        }
-      };
-    } else if (candidate.type === "history" || candidate.type === "tab") {
-      label = {
-        "completion-label": {
-          text: candidate.title,
-          tabIndex: index
-        },
-        "completion-url": {
-          text: candidate.value.replace(/^https?:\/\//, "")
-        },
-        "completion-icon": {
-          icon: $icon(
-            candidate.type === "history" ? "099" : "026",
-            $rgba(140, 140, 140, 0.8),
-            $size(13, 13)
-          )
-        }
-      };
-    } else {
-      throw "Error. Unknown candidate.";
-    }
-
-    if (index === selectedIndex) {
-      label["completion-rectangle"] = {
-        bgcolor: $color("#DDDDDD")
-      };
-    }
-
-    return label;
-  });
-
-  return {
-    type: "list",
-    events: {
-      didSelect: (sender, indexPath) => {
-        browser.decideCandidate(indexPath.row);
-      }
-    },
-    props: {
-      id: "completion-list",
-      rowHeight: COMP_HEIGHT,
-      template: template,
-      data: data,
-      bgColor: COLOR_TAB_LIST_BG,
-      borderWidth: 1,
-      radius: 3,
-      borderColor: $color("#EEEEEE")
-    },
-    layout: (make, view) => {
-      make.top.inset(TOPBAR_HEIGHT - 4);
-      make.height.equalTo(COMP_HEIGHT * candidates.length);
-      make.width.equalTo(view.super.width).multipliedBy(URLBAR_RATIO);
-      make.centerX.equalTo(view.super.center);
-    }
-  };
-}
-
-// -------------------------------------------------------------------- //
-// Tab class
-// -------------------------------------------------------------------- //
-
-class Tab {
-  constructor(parent, url = "http://www.google.com", userScript = "") {
-    this.parent = parent;
-    this.userScript = userScript;
-    this.id =
-      "tab-" +
-      $objc("NSUUID")
-        .$UUID()
-        .$UUIDString()
-        .rawValue();
-    this._title = url;
-    this.url = url;
-    this._loaded = false;
-  }
-
-  get selected() {
-    const browser = this.parent;
-    return this === browser.selectedTab;
-  }
-
-  get loaded() {
-    return this._loaded;
-  }
-
-  select() {
-    this.load();
-    // https://github.com/WebKit/webkit/blob/39a299616172a4d4fe1f7aaf573b41020a1d7358/Source/WebKit/UIProcess/API/Cocoa/WKWebView.mm#L1318
-    this.runtimeWebView.$becomeFirstResponder();
-  }
-
-  set url(val) {
-    this._url = val;
-    if (this._loaded) {
-      this.element.url = val;
-    }
-  }
-
-  get url() {
-    let url = null;
-    if (this._loaded) {
-      url = this.element.url;
-    } else {
-      url = this._url;
-    }
-    if (!url) {
-      return config.NEW_PAGE_URL;
-    }
-    return url;
-  }
-
-  get element() {
-    let element = $(this.id);
-    return element;
-  }
-
-  get title() {
-    return this._title;
-  }
-
-  set title(value) {
-    this._title = value;
-    this.parent._updateTabView();
-  }
-
-  showBookmark() {
-    evalScript(this, "__keysnail__.startSiteSelector(true)");
-  }
-
-  visitURL(url) {
-    this.url = url;
-  }
-
-  load() {
-    if (this._loaded) return;
-    let source = createWidgetTabContent(this, this.url, this.userScript);
-    this.parent._appendElementToView(source);
-    this.runtimeWebView.$setAllowsBackForwardNavigationGestures(true);
-    this._loaded = true;
-  }
-
-  get runtimeWebView() {
-    return this.element.runtimeValue();
-  }
-
-  unload() {
-    if (this._loaded) {
-      this._loaded = false;
-      this.element.url = null;
-      this.element.remove();
-    }
-  }
-
-  dispatchCtrlSpace() {
-    evalScript(this, `__keysnail__.dispatchKey("ctrl- ", false, true)`);
-  }
-}
-
 // -------------------------------------------------------------------- //
 // Browser class
 // -------------------------------------------------------------------- //
 
-class TabBrowser {
+class TabBrowser extends Component {
   /**
    * Tab browser (maintain collection of tabs)
    */
 
-  constructor(userScript, onInitialize) {
+  constructor(userScript, onInitialize, config) {
+    super(null);
+
+    this.config = config;
     this.userScript = userScript;
     this.currentTabIndex = 0;
     this.tabs = [];
     this._pastURLs = [];
     this._pastTitles = [];
+    this._onInitialize = onInitialize;
+
+    this.id = "browser-container";
 
     let browser = this;
 
+     // Width ratio computation
+    const LOCATION_WIDTH_RATIO = 0.5;
+    const TOOLBAR_CONTAINER_WIDTH_RATIO = (1.0 - LOCATION_WIDTH_RATIO) / 2;
+
+    let leftToolBar = new ToolBarButtonContainer("left", TOOLBAR_CONTAINER_WIDTH_RATIO);
+    let rightToolBar = new ToolBarButtonContainer("right", TOOLBAR_CONTAINER_WIDTH_RATIO);
+
+    let completion = new LocationBarCompletion(browser, TOPBAR_HEIGHT);
+    const locationBar = new LocationBar(this, completion, LOCATION_WIDTH_RATIO);
+    browser._locationBar = locationBar;
+    completion.locationBar = locationBar;
+
+    const toolbar = new ToolBar(TOPBAR_HEIGHT);
+    this._toolbar = toolbar;
+
+    rightToolBar.addChild(new ToolBarButton(rightToolBar, "rectangle.on.rectangle", () => browser.selectTabsByPanel()));
+    rightToolBar.addChild(new ToolBarButton(rightToolBar, "plus", () => browser.createNewTab(null, true)));
+    rightToolBar.addChild(new ToolBarButton(rightToolBar, "square.and.arrow.up", () => browser.share()));
+
+    leftToolBar.addChild(new ToolBarButton(leftToolBar, "multiply", () => $app.close()));
+    leftToolBar.addChild(new ToolBarButton(leftToolBar, "chevron.left", () => browser.goBack()));
+    leftToolBar.addChild(new ToolBarButton(leftToolBar, "chevron.right", () => browser.goForward()));
+    leftToolBar.addChild(new ToolBarButton(leftToolBar, "book", () => browser.showBookmark()));
+
+    // Declare view relationship
+    toolbar.addChild(leftToolBar);
+    toolbar.addChild(locationBar);
+    toolbar.addChild(rightToolBar);
+
+    browser.addChild(toolbar);
+
+    browser.addChild(completion);
+
     // Render UI
-    $ui.render({
+    this.render();
+  }
+
+  build() {
+    let browser = this;
+
+    return {
       props: {
-        id: "browser-container",
+        id: this.id,
         title: "iKeySnail",
-        statusBarHidden: config.HIDE_STATUSBAR,
-        navBarHidden: config.HIDE_TOOLBAR,
+        statusBarHidden: this.config.HIDE_STATUSBAR,
+        navBarHidden: this.config.HIDE_TOOLBAR,
         bgcolor: COLOR_CONTAINER_BG
       },
       events: {
         appeared: sender => {
-          onInitialize(this);
+          this._onInitialize(this);
         }
-      },
-      views: [
-        createWidgetTabButton(browser),
-        createWidgetBookmarkListButton(browser),
-        createWidgetShareButton(browser),
-        createWidgetURLInput(browser),
-        createWidgetExitButton(browser),
-        {
-          type: "view",
-          props: { bgcolor: COLOR_TAB_LIST_BG },
-          layout: function(make, view) {
-            if (VERTICAL) {
-              make.top.equalTo(TOPBAR_HEIGHT + (VERTICAL ? 0 : TAB_HEIGHT));
-              make.left.equalTo(0);
-              make.height.equalTo(1);
-              make.width.equalTo(view.super.width);
-            } else {
-              make.top.equalTo(TOPBAR_HEIGHT + (VERTICAL ? 0 : TAB_HEIGHT));
-              make.left.equalTo(0);
-              make.height.equalTo(1);
-              make.width.equalTo(view.super.width);
-            }
-          }
-        }
-      ]
-    });
+      }
+    };
+  }
+
+  focusLocationBar() {
+    this._locationBar.focus();
+  }
+
+  blurLocationBar() {
+    this._locationBar.blur();
+  }
+
+  decideLocationBarCandidate() {
+    this._locationBar.decideCandidate();
+  }
+
+  selectLocationBarNextCandidate() {
+    this._locationBar.selectNextCandidate();
+  }
+
+  selectLocationBarPreviousCandidate() {
+    this._locationBar.selectPreviousCandidate();
   }
 
   get history() {
@@ -973,117 +399,55 @@ class TabBrowser {
     this._pastTitles.push(tabName);
   }
 
-  set suggestions(suggestionInfo) {
-    try {
-      this._suggestionList = null;
-      if (suggestionInfo) {
-        // Tabs
-        let tabs = suggestionInfo.tab.titles.map((title, index) => {
-          return {
-            value: suggestionInfo.tab.urls[index],
-            index: suggestionInfo.tab.indices[index],
-            title: title,
-            type: "tab"
-          };
-        });
-        // History
-        let history = suggestionInfo.history.titles.map((title, index) => {
-          return {
-            value: suggestionInfo.history.urls[index],
-            title: title,
-            type: "history"
-          };
-        });
-        // Google autocompletion
-        let completion = suggestionInfo.completion.map(title => ({
-          value: title,
-          type: "suggestion"
-        }));
-
-        // TODO: Order should be customizable
-        this._suggestionList = tabs.concat(history.concat(completion));
-      }
-
-      this._suggestionIndex = -1;
-      this._updateCandidateView();
-    } catch (x) {
-      console.error(x);
-    }
-  }
-
-  _updateCandidateView() {
-    function removeIfExists(id) {
-      try {
-        let element = $(id);
-        if (element) {
-          element.remove();
-        }
-      } catch (x) {
-        log("Error in removing tab list: " + x);
-      }
-    }
-    removeIfExists("completion-list");
-    if (this._suggestionList) {
-      this._appendElementToView(
-        createWidgetCompletions(
-          this,
-          this._suggestionList,
-          this._suggestionIndex
-        )
-      );
-    }
-  }
-
-  decideCandidate(index) {
-    $("url-input").ks_confirmed = true;
-    if (typeof index !== "number") {
-      index = this._suggestionIndex;
-    }
-    if (index >= 0) {
-      let cand = this._suggestionList[index];
-      if (cand.type === "tab") {
-        this.selectTab(cand.index);
-      } else {
-        $("url-input").text = cand.value;
-      }
-    }
-    // TODO: not blur?
-    // this.blurLocationBar();
-  }
-
-  selectNextCandidate() {
-    if (this._suggestionIndex < 0) {
-      this._suggestionIndex = 0;
-    } else {
-      this._suggestionIndex =
-        (this._suggestionIndex + 1) % this._suggestionList.length;
-    }
-    this._updateCandidateView();
-  }
-
-  selectPreviousCandidate() {
-    if (this._suggestionIndex < 0) {
-      this._suggestionIndex = this._suggestionList.length - 1;
-    } else {
-      if (this._suggestionIndex - 1 < 0) {
-        this._suggestionIndex = this._suggestionList.length - 1;
-      } else {
-        this._suggestionIndex = this._suggestionIndex - 1;
-      }
-    }
-    this._updateCandidateView();
+  get bookmarks() {
+    return this.config.sites.map(site => ({
+      title: site.alias,
+      url: site.url
+    }));
   }
 
   get selectedTab() {
     return this.tabs[this.currentTabIndex];
   }
 
-  setURLView(url) {
-    try {
-      $("url-input").text = decodeURIComponent(url);
-    } catch (x) {
-      console.error(x);
+  selectTabsByPanel() {
+    let browser = this;
+    let candidates = browser.tabs.map((tab, index) => ({
+      text: tab.title,
+      url: tab.url
+    }));
+    let initialIndex = browser.tabs.indexOf(this.selectedTab);
+    this.selectedTab.evalScript(`
+__keysnail__.runPanel(${JSON.stringify(candidates)}, {
+  toggle: true,
+  initialIndex: ${initialIndex},
+  action: index => $notify("selectTabByIndex", { index })
+});
+        `);
+  }
+
+  onTabStartLoading(tab) {
+    if (tab === this.selectedTab) {
+      this.setURLView(tab.url);
     }
+  }
+
+  onTabTitleDetermined(tab) {
+    this.addHistory(tab.url, tab.title);
+  }
+
+  onTabURLChanged(tab) {
+    if (tab === this.selectedTab) {
+      this.setURLView(tab.url);
+    }
+  }
+
+  focusContent() {
+    this.selectedTab.select();
+  }
+
+  setURLView(url) {
+    this._locationBar.setURLText(url);
   }
 
   visitURL(url) {
@@ -1100,18 +464,6 @@ class TabBrowser {
   _appendElementToView(elementSource) {
     this.ui = $("browser-container");
     this.ui.add(elementSource);
-  }
-
-  focusLocationBar() {
-    $("url-input").focus();
-    $("url-input")
-      .runtimeValue()
-      .$selectAll();
-  }
-
-  blurLocationBar() {
-    $("url-input").blur();
-    this.selectedTab.select();
   }
 
   share() {
@@ -1163,7 +515,7 @@ ${tab.url}
    */
   closeTab(tab) {
     if (this.tabs.length <= 1) {
-      this.tabs[0].visitURL(config.NEW_PAGE_URL);
+      this.tabs[0].visitURL(this.config.NEW_PAGE_URL);
     } else {
       tab.visitURL(null); // Expect early GC
       let index = this.tabs.indexOf(tab);
@@ -1182,9 +534,14 @@ ${tab.url}
    */
   createNewTab(url, selectNewTab = false) {
     if (!url) {
-      url = config.NEW_PAGE_URL;
+      url = this.config.NEW_PAGE_URL;
     }
-    let tab = new Tab(this, url, this.userScript);
+    let tab = new Tab(
+        this,
+        this.config,
+        url,
+        this.userScript
+    );
     this.tabs.push(tab);
     if (selectNewTab) {
       this.selectTab(this.tabs.length - 1);
@@ -1278,12 +635,13 @@ function startSession(urlToVisit) {
     }
   } catch (x) {}
 
-  let browser = new TabBrowser(readUserScript(), () => {
+  let browser = new TabBrowser(readUserScript(), (browser) => {
     browser.history = loadHistory();
+
 
     if (lastTabs.length) {
       lastTabs.forEach(tabInfo => {
-        let tab = new Tab(browser, tabInfo.url, browser.userScript);
+        let tab = new Tab(browser, config, tabInfo.url, browser.userScript);
         if (tabInfo.title) {
           tab._title = tabInfo.title;
         }
@@ -1301,7 +659,7 @@ function startSession(urlToVisit) {
     } else {
       browser.createNewTab(urlToVisit || config.NEW_TAB_URL, true);
     }
-  });
+  }, config);
 
   $app.listen({
     ready: () => {
@@ -1327,7 +685,7 @@ function startSession(urlToVisit) {
       let metaKey = false;
       let optionKey = false;
 
-      let inputElement = $("url-input").runtimeValue();
+      let inputElement = browser._locationBar.runtime;
 
       const key = {
         option: 226,
@@ -1349,9 +707,9 @@ function startSession(urlToVisit) {
       const codeToKey = flip(key);
 
       let urlBarCommands = {
-        "ctrl-p": () => browser.selectPreviousCandidate(),
-        "ctrl-n": () => browser.selectNextCandidate(),
-        "ctrl-m": () => browser.decideCandidate(),
+        "ctrl-p": () => browser.selectLocationBarPreviousCandidate(),
+        "ctrl-n": () => browser.selectLocationBarNextCandidate(),
+        "ctrl-m": () => browser.decideLocationBarCandidate(),
         "ctrl-g": () => browser.blurLocationBar(),
         Escape: () => browser.blurLocationBar()
       };

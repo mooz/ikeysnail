@@ -1,0 +1,84 @@
+const {Component} = require("../../Component");
+
+const SIZE_TOPBAR_ICON_BUTTON = 18;
+const COLOR_TOPBAR_BUTTON_FG = $color("#007AFF");
+
+class ToolBarButton extends Component {
+    constructor(container, iconType, onTapped) {
+        super();
+        this._container = container;
+        this._iconOrSymbol = iconType;
+        this._onTapped = onTapped;
+        this._padding = 30;
+        console.log(this._container.align);
+    }
+
+    build() {
+        const viewSource = {
+            type: "button",
+            props: {
+                bgcolor: $color("clear")
+            },
+            events: {
+                tapped: this._onTapped
+            },
+            layout: (make, view) => {
+                // TODO: Better way?
+                const siblings = this._container.element.views;
+                const nthChild = siblings.indexOf(view);
+                if (this._container.align === "left") {
+                    const basis = nthChild === 0 ? view.super.left : siblings[nthChild - 1].right;
+                    make.left.equalTo(basis).offset(this._padding);
+                } else {
+                    const basis = nthChild === 0 ? view.super.right : siblings[nthChild - 1].left;
+                    make.right.equalTo(basis).offset(-this._padding);
+                }
+                make.centerY.equalTo(view.super);
+                make.height.equalTo(view.super);
+            }
+        };
+
+        if ((/^[0-9]+$/.test(this._iconOrSymbol))) {
+            // https://github.com/cyanzhong/xTeko/tree/master/extension-icons
+            viewSource.props.icon = $icon(
+                this._iconOrSymbol,
+                COLOR_TOPBAR_BUTTON_FG,
+                $size(SIZE_TOPBAR_ICON_BUTTON, SIZE_TOPBAR_ICON_BUTTON)
+            );
+        } else {
+          // https://sfsymbols.com/
+            // https://developer.apple.com/design/human-interface-guidelines/sf-symbols/overview/
+            viewSource.props.symbol = this._iconOrSymbol;
+            viewSource.props.tintColor = COLOR_TOPBAR_BUTTON_FG;
+        }
+
+        return viewSource;
+    }
+}
+
+
+// views: [
+//   createWidgetTabButton(browser),
+//   createWidgetBookmarkListButton(browser),
+//   createWidgetShareButton(browser),
+//   createWidgetExitButton(browser),
+//   {
+//     type: "view",
+//     props: {bgcolor: COLOR_TAB_LIST_BG},
+//     layout: function (make, view) {
+//       if (VERTICAL) {
+//         make.top.equalTo(TOPBAR_HEIGHT + (VERTICAL ? 0 : TAB_HEIGHT));
+//         make.left.equalTo(0);
+//         make.height.equalTo(1);
+//         make.width.equalTo(view.super.width);
+//       } else {
+//         make.top.equalTo(TOPBAR_HEIGHT + (VERTICAL ? 0 : TAB_HEIGHT));
+//         make.left.equalTo(0);
+//         make.height.equalTo(1);
+//         make.width.equalTo(view.super.width);
+//       }
+//     }
+//   }
+// ]
+
+exports.ToolBarButton = ToolBarButton;
