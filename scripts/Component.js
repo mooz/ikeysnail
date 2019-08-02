@@ -10,9 +10,36 @@ class Component {
             .$UUID()
             .$UUIDString()
             .rawValue();
-        this._rendered = false;
         this.children = [];
         this._layout = null;
+        this.state = {};
+        this._stateValue = {};
+    }
+
+    defineState(keyValues) {
+        Object.entries(keyValues).forEach(([key, value]) => {
+            Object.defineProperty(this.state, key, {
+                get: () => {
+                    return this._stateValue[key];
+                },
+                set: (value) => {
+                    throw Error(`Trying to assign a value ${value} to "${key}" by assignment op (=). Use setState() instead.`);
+                }
+            });
+            this._stateValue[key] = value;
+        });
+    }
+
+    setState(keyValues) {
+        Object.entries(keyValues).forEach(([key, value]) => {
+            if (!this._stateValue.hasOwnProperty(key)) {
+                $ui.toast(`No such state: ${key} in ${this.constructor.name}`);
+                throw `No such state: ${key}`;
+            }
+            this._stateValue[key] = value;
+        });
+        // TODO: 真に状態が変わったかをチェックすると、より再描画が減って効率的
+        this._onStateChange();
     }
 
     set layout(val) {
@@ -36,11 +63,11 @@ class Component {
     }
 
     /**
-     * このコンポーネントの状態が変わったり子供が追加された
+     * このコンポーネントの状態が変わったり子供が追加されたら呼ばれる。
      *
      * デフォルトの挙動は、再レンダリング
      */
-    onStateChange() {
+    _onStateChange() {
         if (this.rendered) {
             console.error("Should be re-rendered. OK?");
         }
@@ -50,7 +77,6 @@ class Component {
     addChild(childComponent) {
         this.children.push(childComponent);
         childComponent.parent = this;
-        // this.onStateChange();
     }
 
     removeChild(childComponent) {
@@ -62,7 +88,6 @@ class Component {
 
             throw "Child not found";
         }
-        // this.onStateChange();
     }
 
     get runtime() {
@@ -126,7 +151,7 @@ class Component {
 
             $(this._parent.id).add(viewSource);
         } else {
-            // **** Non-root element ****
+            // **** Root element ****
             // Root element
             console.log("Root element. call $ui.render(): " + viewSource.type);
             $ui.render(viewSource);

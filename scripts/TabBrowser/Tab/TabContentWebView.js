@@ -8,7 +8,7 @@ const {Component} = require("../../Component");
 // Tab class
 // -------------------------------------------------------------------- //
 
-class Tab extends Component {
+class TabContentWebView extends Component {
     constructor(browser,
                 config,
                 url = "http://www.google.com",
@@ -237,4 +237,4 @@ function evalScript(tab, contentScript, promisify = true) {
     }
 }
 
-exports.Tab = Tab;
+exports.Tab = TabContentWebView;

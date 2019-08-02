@@ -2,7 +2,7 @@ const config = { sites: [] };
 require("./strings/settings").setup(config, { marked: () => null });
 
 const {Component} = require("scripts/Component");
-const {Tab} = require("scripts/TabBrowser/Tab/Tab");
+const {Tab} = require("scripts/TabBrowser/Tab/TabContentWebView");
 const {ToolBar} = require("scripts/TabBrowser/ToolBar/ToolBar");
 const {ToolBarButton} = require("scripts/TabBrowser/ToolBar/ToolBarButton");
 const {ToolBarButtonContainer} = require("scripts/TabBrowser/ToolBar/ToolBarButtonContainer");

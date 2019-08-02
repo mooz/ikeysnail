@@ -13,13 +13,16 @@ class LocationBarCompletion extends Component {
                 CANDIDATE_HEIGHT = 40) {
         super();
         this._browser = browser;
-        this._suggestionList = null;
-        this._suggestionIndex = -1;
         this._locationBar = null;
         this._canceled = false;
         // TODO: 最終的にはピクセル計算やめたいので、この変数は消したい
         this.TOPBAR_HEIGHT = TOPBAR_HEIGHT;
         this.CANDIDATE_HEIGHT = CANDIDATE_HEIGHT;
+
+        this.defineState({
+            suggestionList: null,
+            suggestionIndex: -1
+        });
     }
 
     set locationBar(val) {
@@ -27,13 +30,14 @@ class LocationBarCompletion extends Component {
     }
 
     get suggestionSelected() {
-        return this._suggestionIndex >= 0;
+        return this.state.suggestionIndex >= 0;
     }
 
     set suggestions(suggestionList) {
-        this._suggestionList = suggestionList;
-        this._suggestionIndex = -1;
-        this.onStateChange();
+        this.setState({
+            suggestionList: suggestionList,
+            suggestionIndex: -1
+        })
     }
 
     reset() {
@@ -51,44 +55,45 @@ class LocationBarCompletion extends Component {
 
     decide(index) {
         if (typeof index !== "number") {
-            index = this._suggestionIndex;
+            index = this.state.suggestionIndex;
         }
         if (index >= 0) {
-            let cand = this._suggestionList[index];
+            let cand = this.state.suggestionList[index];
             cand.constructor.execAction(cand, this._browser);
         }
     }
 
     selectNextCandidate() {
-        if (this._suggestionIndex < 0) {
-            this._suggestionIndex = 0;
+        if (this.state.suggestionIndex < 0) {
+            this.setState({suggestionIndex: 0});
         } else {
-            this._suggestionIndex =
-                (this._suggestionIndex + 1) % this._suggestionList.length;
+            this.setState({
+                suggestionIndex: (this.state.suggestionIndex + 1) % this.state.suggestionList.length
+            });
         }
-        this.onStateChange();
     }
 
     selectPreviousCandidate() {
-        if (this._suggestionIndex < 0) {
-            this._suggestionIndex = this._suggestionList.length - 1;
+        let index = -1;
+        if (this.state.suggestionIndex < 0) {
+            index = this.state.suggestionList.length - 1;
         } else {
-            if (this._suggestionIndex - 1 < 0) {
-                this._suggestionIndex = this._suggestionList.length - 1;
+            if (this.state.suggestionIndex - 1 < 0) {
+                index = this.state.suggestionList.length - 1;
             } else {
-                this._suggestionIndex = this._suggestionIndex - 1;
+                index = this.state.suggestionIndex - 1;
             }
         }
-        this.onStateChange();
+        this.setState({suggestionIndex: index});
     }
 
     build() {
-        const candidates = this._suggestionList;
-        const selectedIndex = this._suggestionIndex;
+        const candidates = this.state.suggestionList;
+        const selectedIndex = this.state.suggestionIndex;
 
-        if (!candidates) {
-            return null;
-        }
+        // if (!candidates || !candidates.length) {
+        //     return null;
+        // }
 
         const ICON_AREA_WIDTH = 32;
 
@@ -195,6 +200,9 @@ class LocationBarCompletion extends Component {
             return label;
         });
 
+        let hidden = (candidates || []).length === 0;
+        console.log("hidden: " + hidden);
+
         return {
             type: "list",
             events: {
@@ -203,21 +211,22 @@ class LocationBarCompletion extends Component {
                 }
             },
             props: {
-                id: this.id,
+                id: "completion-list",
                 rowHeight: this.CANDIDATE_HEIGHT,
                 template: template,
                 data: data,
                 bgColor: COLOR_CANDIDATE_BG,
                 borderWidth: 1,
                 radius: 5,
-                borderColor: COLOR_CANDIDATE_BORDER
+                borderColor: COLOR_CANDIDATE_BORDER,
+                hidden: hidden
             },
             layout: (make, view) => {
-                make.centerX.equalTo(view.super);
-                make.width.equalTo(this._locationBar.element);
-                make.height.equalTo(this.CANDIDATE_HEIGHT * candidates.length);
+                make.centerX.equalTo(this._locationBar.element.centerX);
+                make.width.equalTo(this._locationBar.element).priority(1);
+                make.height.equalTo(this.CANDIDATE_HEIGHT * (candidates || []).length).priority(1);
                 // このコードだと、最初に候補が出たときかならず表示がバグる （ スクリーン上部にはりつく)
-                // make.top.equalTo(this._locationBar.element.bottom);
+                // make.top.equalTo(this._locationBar.element.bottom).priority(1);
                 // なので、汚いがピクセル固定でごまかす。。
                 const URLBAR_HEIGHT = this.TOPBAR_HEIGHT * this._locationBar.HEIGHT_RATIO;
                 make.top.equalTo(URLBAR_HEIGHT + ((this.TOPBAR_HEIGHT - URLBAR_HEIGHT) / 2) + 1);
