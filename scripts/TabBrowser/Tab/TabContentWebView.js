@@ -1,4 +1,4 @@
-const TOPBAR_HEIGHT = 35;
+// const TOPBAR_HEIGHT = 35;
 const VERTICAL_TAB_WIDTH = 300;
 const TAB_HEIGHT = 30;
 
@@ -14,6 +14,7 @@ class TabContentWebView extends Component {
                 url = "http://www.google.com",
                 userScript = "") {
         super();
+
         this.browser = browser;
         this.config = config;
         this.userScript = userScript;
@@ -191,11 +192,11 @@ class TabContentWebView extends Component {
                 if (this.config.TAB_VERTICAL) {
                     make.edges
                         .equalTo(view.super)
-                        .insets($insets(TOPBAR_HEIGHT + 1, VERTICAL_TAB_WIDTH, 0, 0));
+                        .insets($insets(this.config.TOPBAR_HEIGHT + 1, VERTICAL_TAB_WIDTH, 0, 0));
                 } else {
                     make.edges
                         .equalTo(view.super)
-                        .insets($insets(TOPBAR_HEIGHT + TAB_HEIGHT + 1, 0, 0, 0));
+                        .insets($insets(this.config.TOPBAR_HEIGHT + TAB_HEIGHT + 1, 0, 0, 0));
                 }
             }
         };

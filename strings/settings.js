@@ -7,6 +7,8 @@ const setup = (config, keysnail) => {
   config.TAB_VERTICAL_WIDTH = 200;
   config.TAB_LAZY_LOADING = true;
 
+  config.TOPBAR_HEIGHT = 50;
+
   config.CAPTURE_CTRL_SPACE = true;
   config.HIDE_STATUSBAR = true;
   config.HIDE_TOOLBAR = true;
@@ -92,7 +94,8 @@ const setup = (config, keysnail) => {
     },
     view: {
       d: () => $notify("closeTab"),
-      o: () => keysnail.startSiteSelector(),
+      "o": () => $notify("focusLocationBar"),
+      // o: () => keysnail.startSiteSelector(),
       "ctrl-a": () => $notify("selectTabsByPanel"),
       e: () => keysnail.toggleHitHint(),
       Escape: () => keysnail.escape(),

@@ -4,13 +4,11 @@ const SIZE_TOPBAR_ICON_BUTTON = 18;
 const COLOR_TOPBAR_BUTTON_FG = $color("#007AFF");
 
 class ToolBarButton extends Component {
-    constructor(container, iconType, onTapped) {
+    constructor(iconType, onTapped) {
         super();
-        this._container = container;
         this._iconOrSymbol = iconType;
         this._onTapped = onTapped;
         this._padding = 30;
-        console.log(this._container.align);
     }
 
     build() {
@@ -24,9 +22,9 @@ class ToolBarButton extends Component {
             },
             layout: (make, view) => {
                 // TODO: Better way?
-                const siblings = this._container.element.views;
+                const siblings = this._parent.element.views;
                 const nthChild = siblings.indexOf(view);
-                if (this._container.align === "left") {
+                if (this._parent.align === "left") {
                     const basis = nthChild === 0 ? view.super.left : siblings[nthChild - 1].right;
                     make.left.equalTo(basis).offset(this._padding);
                 } else {
@@ -55,30 +53,5 @@ class ToolBarButton extends Component {
         return viewSource;
     }
 }
-
-
-// views: [
-//   createWidgetTabButton(browser),
-//   createWidgetBookmarkListButton(browser),
-//   createWidgetShareButton(browser),
-//   createWidgetExitButton(browser),
-//   {
-//     type: "view",
-//     props: {bgcolor: COLOR_TAB_LIST_BG},
-//     layout: function (make, view) {
-//       if (VERTICAL) {
-//         make.top.equalTo(TOPBAR_HEIGHT + (VERTICAL ? 0 : TAB_HEIGHT));
-//         make.left.equalTo(0);
-//         make.height.equalTo(1);
-//         make.width.equalTo(view.super.width);
-//       } else {
-//         make.top.equalTo(TOPBAR_HEIGHT + (VERTICAL ? 0 : TAB_HEIGHT));
-//         make.left.equalTo(0);
-//         make.height.equalTo(1);
-//         make.width.equalTo(view.super.width);
-//       }
-//     }
-//   }
-// ]
 
 exports.ToolBarButton = ToolBarButton;

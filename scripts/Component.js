@@ -77,6 +77,7 @@ class Component {
     addChild(childComponent) {
         this.children.push(childComponent);
         childComponent.parent = this;
+        return this;
     }
 
     removeChild(childComponent) {

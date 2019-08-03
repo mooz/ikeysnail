@@ -88,7 +88,7 @@ class LocationBar extends Component {
                 make.centerY.equalTo(view.super.center);
                 make.height.equalTo(view.super.height).multipliedBy(this.HEIGHT_RATIO);
                 make.width.equalTo(view.super.width).multipliedBy(this.WIDTH_RATIO);
-                make.centerX.equalTo(view.super.center);
+                make.centerX.equalTo(view.super.center).priority(100);
             },
             events: {
                 didBeginEditing: sender => {

@@ -112,7 +112,7 @@ function readUserScript() {
   let contentScript = readMinified("./strings/content-script");
   return contentScript.replace(
     "/*@preserve SETTINGS_HERE*/",
-    "\n" + userSettings + "\n"
+      "\n" + userSettings + "\n"
   );
 }
 
@@ -121,162 +121,232 @@ function readUserScript() {
 // ----------------------------------------------------------- //
 
 function convertURLLikeInputToURL(url) {
-  if (!/^https?:/.test(url)) {
-    return "https://www.google.com/search?q=" + encodeURIComponent(url);
-  }
-  return url;
+    if (!/^https?:/.test(url)) {
+        return "https://www.google.com/search?q=" + encodeURIComponent(url);
+    }
+    return url;
 }
 
-function createWidgetTabList(browser) {
-  const tabNames = browser.tabs.map(tab => tab.title);
-  const tabTemplate = {
-    props: {},
-    views: [
-      {
-        type: "view",
-        props: {
-          id: "tab-rectangle"
-        },
-        layout: $layout.fill,
-        views: [
-          {
-            type: "label",
+class TabList extends Component {
+    constructor(browser) {
+        super();
+
+        this._browser = browser;
+        this._eventHandlers = {
+            didSelect: (sender, indexPath) => {
+                this._browser.selectTab(indexPath.row);
+            },
+            didLongPress: (sender, indexPath) => {
+                const commands = [
+                    ["Copy", () => browser.copyTabInfo(indexPath.row)],
+                    ["Close other tabs", () => browser.closeTabsBesides(indexPath.row)],
+                    [
+                        "Open in external browser",
+                        () => browser.openInExternalBrowser(indexPath.row)
+                    ]
+                ];
+                $ui.menu({
+                    items: commands.map(c => c[0]),
+                    handler: function (title, idx) {
+                        if (idx >= 0) {
+                            commands[idx][1]();
+                        }
+                    },
+                    finished: function (cancelled) {
+                        // nothing?
+                    }
+                });
+            }
+        };
+
+        this._tabTemplate = {
+            props: {},
+            views: [
+                {
+                    type: "view",
+                    props: {
+                        id: "tab-rectangle"
+                    },
+                    layout: $layout.fill,
+                    views: [
+                        {
+                            type: "label",
+                            props: {
+                                id: "tab-name",
+                                align: $align.center,
+                                font: $font(SIZE_TAB_FONT)
+                            },
+                            layout: (make, view) => {
+                                make.height.equalTo(view.super.height);
+                                make.width.equalTo(view.super.width).offset(-30);
+                                make.left.equalTo(view.super.left).offset(25);
+                            }
+                        }
+                    ]
+                },
+                {
+                    type: "button",
+                    props: {
+                        id: "close-button",
+                        icon: $icon(
+                            "225",
+                            $rgba(140, 140, 140, 0.8),
+                            $size(SIZE_TAB_CLOSE_ICON_BUTTON, SIZE_TAB_CLOSE_ICON_BUTTON)
+                        ),
+                        bgcolor: $color("clear")
+                    },
+                    events: {
+                        tapped: async () => {
+                            browser.closeTab(browser.tabs[browser.currentTabIndex]);
+                        }
+                    },
+                    layout: (make, view) => {
+                        make.left.equalTo(view.super.left).offset(5);
+                        make.top.inset(5);
+                    }
+                }
+            ]
+        };
+    }
+
+    get tabNames() {
+        let names = this._browser.tabs.map(tab => tab.title);
+        return  names;
+
+    }
+
+    get currentTabIndex() {
+        return this._browser.currentTabIndex;
+    }
+
+    build() {
+        const data = this.tabNames.map((name, index) => {
+            if (index === this.currentTabIndex) {
+                return {
+                    "tab-name": {
+                        text: name
+                    },
+                    "tab-rectangle": {
+                        bgcolor: COLOR_TAB_BG_SELECTED,
+                        textColor: COLOR_TAB_FG_SELECTED,
+                        tabIndex: index
+                    }
+                };
+            } else {
+                return {
+                    "tab-name": {
+                        text: name
+                    },
+                    "tab-rectangle": {
+                        bgcolor: COLOR_TAB_BG_INACTIVE,
+                        textColor: COLOR_TAB_FG_INACTIVE,
+                        tabIndex: index
+                    },
+                    "close-button": {
+                        hidden: true
+                    }
+                };
+            }
+        });
+
+        if (!data || data.length === 0) {
+            return null;
+        }
+
+        return this._buildTabList(data);
+    }
+}
+
+class TabListVertical extends TabList {
+    constructor(browser) {
+        super(browser);
+    }
+
+    _buildTabList(data) {
+        return {
+            type: "list",
+            events: this._eventHandlers,
             props: {
-              id: "tab-name",
-              align: $align.center,
-              font: $font(SIZE_TAB_FONT)
+                id: "pages-tab",
+                rowHeight: TAB_HEIGHT,
+                // spacing: 0,
+                template: this._tabTemplate,
+                data: data,
+                bgcolor: COLOR_TAB_LIST_BG,
+                borderWidth: 0
             },
             layout: (make, view) => {
-              make.height.equalTo(view.super.height);
-              make.width.equalTo(view.super.width).offset(-30);
-              make.left.equalTo(view.super.left).offset(25);
+                make.width.equalTo(VERTICAL_TAB_WIDTH);
+                make.height.equalTo(view.super.height);
+                make.top.equalTo(view.super.top);
+                make.left.equalTo(0);
             }
-          }
-        ]
-      },
-      {
-        type: "button",
-        props: {
-          id: "close-button",
-          icon: $icon(
-            "225",
-            $rgba(140, 140, 140, 0.8),
-            $size(SIZE_TAB_CLOSE_ICON_BUTTON, SIZE_TAB_CLOSE_ICON_BUTTON)
-          ),
-          bgcolor: $color("clear")
-        },
-        events: {
-          tapped: async () => {
-            browser.closeTab(browser.tabs[browser.currentTabIndex]);
-          }
-        },
-        layout: (make, view) => {
-          make.left.equalTo(view.super.left).offset(TOPBAR_FIRSTROW_OFFSET);
-          make.top.inset(TOPBAR_FIRSTROW_OFFSET);
-        }
-      }
-    ]
-  };
-
-  const data = tabNames.map((name, index) => {
-    if (index === browser.currentTabIndex) {
-      return {
-        "tab-name": {
-          text: name
-        },
-        "tab-rectangle": {
-          bgcolor: COLOR_TAB_BG_SELECTED,
-          textColor: COLOR_TAB_FG_SELECTED,
-          tabIndex: index
-        }
-      };
-    } else {
-      return {
-        "tab-name": {
-          text: name
-        },
-        "tab-rectangle": {
-          bgcolor: COLOR_TAB_BG_INACTIVE,
-          textColor: COLOR_TAB_FG_INACTIVE,
-          tabIndex: index
-        },
-        "close-button": {
-          hidden: true
-        }
-      };
+        };
     }
-  });
-
-  if (VERTICAL) {
-    return {
-      type: "list",
-      events: {
-        didSelect: (sender, indexPath) => {
-          browser.selectTab(indexPath.row);
-        },
-        didLongPress: (sender, indexPath) => {
-          const commands = [
-            ["Copy", () => browser.copyTabInfo(indexPath.row)],
-            ["Close other tabs", () => browser.closeTabsBesides(indexPath.row)],
-            [
-              "Open in external browser",
-              () => browser.openInExternalBrowser(indexPath.row)
-            ]
-          ];
-          $ui.menu({
-            items: commands.map(c => c[0]),
-            handler: function(title, idx) {
-              if (idx >= 0) {
-                commands[idx][1]();
-              }
-            },
-            finished: function(cancelled) {
-              // nothing?
-            }
-          });
-        }
-      },
-      props: {
-        id: "pages-tab",
-        rowHeight: TAB_HEIGHT,
-        // spacing: 0,
-        template: tabTemplate,
-        data: data,
-        bgcolor: COLOR_TAB_LIST_BG,
-        borderWidth: 0
-      },
-      layout: (make, view) => {
-        make.width.equalTo(VERTICAL_TAB_WIDTH);
-        make.height.equalTo(view.super.height).offset(-(TOPBAR_HEIGHT + 1));
-        make.top.equalTo(TOPBAR_HEIGHT + 1);
-        make.left.equalTo(0);
-      }
-    };
-  } else {
-    return {
-      type: "matrix",
-      events: {
-        didSelect: (sender, indexPath) => {
-          browser.selectTab(indexPath.row);
-        }
-      },
-      props: {
-        id: "pages-tab",
-        columns: tabNames.length,
-        itemHeight: TAB_HEIGHT,
-        spacing: 0,
-        template: tabTemplate,
-        data: data
-      },
-      layout: (make, view) => {
-        make.width.equalTo(view.super.width);
-        make.height.equalTo(TAB_HEIGHT);
-        make.top.equalTo(TOPBAR_HEIGHT);
-        make.left.equalTo(0);
-      }
-    };
-  }
 }
+
+class TabListHorizontal extends TabList {
+    constructor(browser) {
+        super(browser);
+    }
+
+    _buildTabList(data) {
+        return {
+            type: "matrix",
+            events: this._eventHandlers,
+            props: {
+                id: "pages-tab",
+                columns: data.length,
+                itemHeight: TAB_HEIGHT,
+                spacing: 0,
+                template: this._tabTemplate,
+                data: data
+            },
+            layout: (make, view) => {
+                make.width.equalTo(view.super.width);
+                make.height.equalTo(TAB_HEIGHT);
+                make.top.equalTo(view.super);
+                make.left.equalTo(view.super);
+            }
+        };
+    }
+}
+
+class TabAndContentContainer extends Component {
+    constructor(vertical, verticalOffset) {
+        super();
+        this._verticalOffset = verticalOffset;
+    //                 this.tabs.forEach((tab, index) => {
+    //   if (tab.element) {
+    //     tab.element.hidden = index !== tabIndexToShow;
+    //   }
+    // });
+    }
+
+    build() {
+        return {
+            type: "view",
+            props: {
+                bgcolor: $color("clear")
+            },
+            layout: (make, view) => {
+                // TODO: vertical
+                make.width.equalTo(view.super.width);
+                make.height.equalTo(view.super.height).offset(this._verticalOffset);
+                make.top.equalTo(view.super.top).offset(this._verticalOffset);
+                make.left.equalTo(0);
+            }
+        }
+    }
+}
+
+//
+//     }
+//
+//     build() {
+//
+//     }
+// }
 
 // -------------------------------------------------------------------- //
 // Browser class
@@ -298,6 +368,8 @@ class TabBrowser extends Component {
     this._pastTitles = [];
     this._onInitialize = onInitialize;
 
+    const TOPBAR_HEIGHT = config.TOPBAR_HEIGHT;
+
     this.id = "browser-container";
 
     let browser = this;
@@ -317,23 +389,39 @@ class TabBrowser extends Component {
     const toolbar = new ToolBar(TOPBAR_HEIGHT);
     this._toolbar = toolbar;
 
-    rightToolBar.addChild(new ToolBarButton(rightToolBar, "rectangle.on.rectangle", () => browser.selectTabsByPanel()));
-    rightToolBar.addChild(new ToolBarButton(rightToolBar, "plus", () => browser.createNewTab(null, true)));
-    rightToolBar.addChild(new ToolBarButton(rightToolBar, "square.and.arrow.up", () => browser.share()));
+    const tabAndContentContainer = new TabAndContentContainer(false, TOPBAR_HEIGHT);
 
-    leftToolBar.addChild(new ToolBarButton(leftToolBar, "multiply", () => $app.close()));
-    leftToolBar.addChild(new ToolBarButton(leftToolBar, "chevron.left", () => browser.goBack()));
-    leftToolBar.addChild(new ToolBarButton(leftToolBar, "chevron.right", () => browser.goForward()));
-    leftToolBar.addChild(new ToolBarButton(leftToolBar, "book", () => browser.showBookmark()));
+    const tabList = new TabListVertical(browser);
+    this._tabList = tabList;
 
-    // Declare view relationship
-    toolbar.addChild(leftToolBar);
-    toolbar.addChild(locationBar);
-    toolbar.addChild(rightToolBar);
+      rightToolBar
+          .addChild(new ToolBarButton("rectangle.on.rectangle", () => browser.selectTabsByPanel()))
+          .addChild(new ToolBarButton("plus", () => browser.createNewTab(null, true)))
+          .addChild(new ToolBarButton("square.and.arrow.up", () => browser.share()))
+      ;
 
-    browser.addChild(toolbar);
+      leftToolBar
+          .addChild(new ToolBarButton("multiply", () => $app.close()))
+          .addChild(new ToolBarButton("chevron.left", () => browser.goBack()))
+          .addChild(new ToolBarButton("chevron.right", () => browser.goForward()))
+          .addChild(new ToolBarButton("book", () => browser.showBookmark()))
+      ;
 
-    browser.addChild(completion);
+      // Declare view relationship
+      toolbar
+          .addChild(leftToolBar)
+          .addChild(locationBar)
+          .addChild(rightToolBar)
+      ;
+
+      tabAndContentContainer
+          .addChild(tabList);
+
+      browser
+          .addChild(completion)
+          .addChild(toolbar)
+          .addChild(tabAndContentContainer)
+      ;
 
     // Render UI
     this.render();
@@ -565,11 +653,13 @@ ${tab.url}
    * WebView -> currentTabIndex 以外の tab content を隠す
    */
   _updateTabContentVisibility(tabIndexToShow) {
-    this.tabs.forEach((tab, index) => {
-      if (tab.element) {
-        tab.element.hidden = index !== tabIndexToShow;
-      }
-    });
+    // this._tabContents.render();
+      this.tabs.forEach((tab, index) => {
+          if (tab.element) {
+              tab.element.hidden = index !== tabIndexToShow;
+          }
+      });
+
   }
 
   /**
@@ -578,20 +668,7 @@ ${tab.url}
    * @param {[string]} tabNames
    */
   _updateTabListAppearance(tabIndexToShow) {
-    function removeIfExists(id) {
-      try {
-        let element = $(id);
-        if (element) {
-          element.remove();
-        }
-      } catch (x) {
-        log("Error in removing tab list: " + x);
-      }
-    }
-
-    removeIfExists("pages-tab");
-    let source = createWidgetTabList(this);
-    this._appendElementToView(source);
+    this._tabList.render();
   }
 
   selectTab(tabIndexToSelect) {

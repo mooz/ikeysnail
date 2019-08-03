@@ -201,7 +201,6 @@ class LocationBarCompletion extends Component {
         });
 
         let hidden = (candidates || []).length === 0;
-        console.log("hidden: " + hidden);
 
         return {
             type: "list",
@@ -222,11 +221,12 @@ class LocationBarCompletion extends Component {
                 hidden: hidden
             },
             layout: (make, view) => {
-                make.centerX.equalTo(this._locationBar.element.centerX);
-                make.width.equalTo(this._locationBar.element).priority(1);
+                let locationBar = this._locationBar.element;
+                make.centerX.equalTo(locationBar.centerX);
+                make.width.equalTo(locationBar).priority(1);
                 make.height.equalTo(this.CANDIDATE_HEIGHT * (candidates || []).length).priority(1);
                 // このコードだと、最初に候補が出たときかならず表示がバグる （ スクリーン上部にはりつく)
-                // make.top.equalTo(this._locationBar.element.bottom).priority(1);
+                // make.top.equalTo(locationBar.bottom).priority(1);
                 // なので、汚いがピクセル固定でごまかす。。
                 const URLBAR_HEIGHT = this.TOPBAR_HEIGHT * this._locationBar.HEIGHT_RATIO;
                 make.top.equalTo(URLBAR_HEIGHT + ((this.TOPBAR_HEIGHT - URLBAR_HEIGHT) / 2) + 1);
