@@ -63,19 +63,25 @@ class LocationBar extends Component {
             //       "SuggestionHistory",
             //       "SuggestionWebQuery",
             //   ];
-            const CompletionModule = require("./LocationBarCompletion");
-            const suggestionTasks = suggestionList.map(
-                name => CompletionModule[name].generateByQuery(query, browser)
+            const suggestionTasks = suggestionList.map(suggestionClass => {
+                    if (typeof suggestionClass === "string") {
+                        const CompletionModule = require("./LocationBarCompletion");
+                        suggestionClass = CompletionModule[suggestionClass];
+                    }
+                    return suggestionClass.generateByQuery(query, browser);
+                }
             );
             let suggestions = await Promise.all(suggestionTasks);
-            suggestions = suggestions.map(eachSuggestions => eachSuggestions.slice(0, NUM_CANDIDATE_MAX))
+            suggestions = suggestions
+                .filter(s => !!s)
+                .map(eachSuggestions => eachSuggestions.slice(0, NUM_CANDIDATE_MAX))
                 .flat();
             if (this._completion.canceled) {
                 return;
             }
             this._completion.suggestions = suggestions;
         };
-        const obtainSuggestionsDebounce = debounce(obtainSuggestions, 10);
+        const obtainSuggestionsDebounce = debounce(obtainSuggestions, 200);
 
         return {
             type: "input",

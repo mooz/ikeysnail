@@ -1024,7 +1024,7 @@
 
   /*@preserve SETTINGS_HERE*/
 
-  setup(config, keysnail);
+  setup(config, keysnail, true);
 
   initializeRichTextEditor(0);
   window.addEventListener(

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Start Page</title>
+    <meta name="viewport"
+          content="width=device-width,initial-scale=1.0,maximum-scale=1.0,minimum-scale=1.0,user-scalable=no">
+</head>
+<script>
+    function loadSites(sitesJSON) {
+        alert(sitesJSON);
+        let sites = JSON.parse(sitesJSON);
+        let popup = document.createElement("div");
+        popup.setAttribute("id", "jsbox-popup");
+        popup.setAttribute(
+            "style",
+            `
+        display: block !important;
+        font-family: monospace !important;
+        position: fixed !important;
+        top: 10% !important;
+        left: 10% !important;
+        padding: 1em !important;
+        width: 80% !important;
+        height: 80% !important;
+        background: black !important;
+        font-size: 15px !important;
+        opacity: 0.9 !important;
+        border: 1px solid black !important;
+        border-radius: 1ex !important;
+        z-index: 99990  !important;
+        `
+        );
+        sites.forEach(site => {
+            let link = document.createElement("a");
+            link.setAttribute("href", site.url);
+            link.setAttribute(
+                "style",
+                `
+            display: block !important;
+            color: white !important;
+            padding: 0.5em 2em !important;
+            border-bottom: 1px solid white !important;
+            `
+            );
+            link.textContent = site.alias + " (" + site.url + ")";
+            popup.appendChild(link);
+        });
+        document.documentElement.appendChild(popup);
+    }
+</script>
+<body>
+<h1>Welcome</h1>
+</body>

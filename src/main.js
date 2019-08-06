@@ -1,44 +1,13 @@
-const config = { sites: [] };
-require("./strings/settings").setup(config, { marked: () => null });
+const {TabContentWebView} = require("TabBrowser/Tab/TabContentWebView");
+const {Component} = require("Component");
+const {ToolBar} = require("TabBrowser/ToolBar/ToolBar");
+const {ToolBarButton} = require("TabBrowser/ToolBar/ToolBarButton");
+const {ToolBarButtonContainer} = require("TabBrowser/ToolBar/ToolBarButtonContainer");
+const {LocationBar} = require("TabBrowser/ToolBar/LocationBar/LocationBar");
+const {LocationBarCompletion} = require("TabBrowser/ToolBar/LocationBar/LocationBarCompletion");
+const {TabListHorizontal} = require("TabBrowser/TabList");
+const {TabListVertical} = require("TabBrowser/TabList");
 
-const {Component} = require("scripts/Component");
-const {Tab} = require("scripts/TabBrowser/Tab/TabContentWebView");
-const {ToolBar} = require("scripts/TabBrowser/ToolBar/ToolBar");
-const {ToolBarButton} = require("scripts/TabBrowser/ToolBar/ToolBarButton");
-const {ToolBarButtonContainer} = require("scripts/TabBrowser/ToolBar/ToolBarButtonContainer");
-const {LocationBar} = require("./scripts/TabBrowser/ToolBar/LocationBar/LocationBar");
-const {LocationBarCompletion} = require("./scripts/TabBrowser/ToolBar/LocationBar/LocationBarCompletion");
-
-const VERTICAL = config.TAB_VERTICAL;
-const VERTICAL_TAB_WIDTH = config.TAB_VERTICAL_WIDTH;
-const TOPBAR_HEIGHT = 50;
-const TAB_HEIGHT = 30;
-
-const SIZE_TAB_FONT = 13;
-
-const SIZE_TAB_CLOSE_ICON_BUTTON = 15;
-const SIZE_TOPBAR_ICON_BUTTON = 18;
-
-const TOPBAR_FIRSTROW_OFFSET = 5;
-
-// blue
-const COLOR_TOPBAR_BUTTON_FG = $color("#007AFF");
-
-const COLOR_CONTAINER_BG = $rgba(250, 250, 250, 0.9);
-
-const COLOR_TAB_BG_SELECTED = $rgba(250, 250, 250, 0.9);
-const COLOR_TAB_FG_SELECTED = $color("#000000");
-
-const COLOR_TAB_BG_INACTIVE = $color("#cccccc");
-const COLOR_TAB_FG_INACTIVE = $color("#666666");
-
-const COLOR_TAB_LIST_BG = $color("#bbbbbb");
-
-function log(message) {
-  if (config.DEBUG_CONSOLE) {
-    console.log(message);
-  }
-}
 
 function readMinified(prefix) {
   if ($file.exists(prefix + ".min.js")) {
@@ -67,7 +36,7 @@ function loadTabInfo() {
 function saveTabInfo(browser) {
   let tabURLs = browser.tabs.map(tab => tab.url);
   let tabTitles = browser.tabs.map(tab => tab.title);
-  let lastTabIndex = browser.currentTabIndex;
+    let lastTabIndex = browser.currentTabIndex;
   let lastTabInfo = [tabURLs, lastTabIndex, tabTitles];
   $file.write({
     data: $data({ string: JSON.stringify(lastTabInfo) }),
@@ -107,6 +76,14 @@ function saveHistory(browser) {
 // User script
 // ----------------------------------------------------------- //
 
+function loadConfig() {
+    let userSettings = readMinified("./strings/settings");
+    eval(userSettings);
+    const config = {sites: []};
+    exports.setup(config, {marked: () => null});
+    return config;
+}
+
 function readUserScript() {
   let userSettings = readMinified("./strings/settings");
   let contentScript = readMinified("./strings/content-script");
@@ -127,200 +104,36 @@ function convertURLLikeInputToURL(url) {
     return url;
 }
 
-class TabList extends Component {
-    constructor(browser) {
+// <TabAndContentContainer>
+//   <TabList />
+//   <TabContentHolder />
+// </TabAndContentContainer>
+class TabAndContentContainer extends Component {
+    constructor(verticalOffset) {
         super();
-
-        this._browser = browser;
-        this._eventHandlers = {
-            didSelect: (sender, indexPath) => {
-                this._browser.selectTab(indexPath.row);
-            },
-            didLongPress: (sender, indexPath) => {
-                const commands = [
-                    ["Copy", () => browser.copyTabInfo(indexPath.row)],
-                    ["Close other tabs", () => browser.closeTabsBesides(indexPath.row)],
-                    [
-                        "Open in external browser",
-                        () => browser.openInExternalBrowser(indexPath.row)
-                    ]
-                ];
-                $ui.menu({
-                    items: commands.map(c => c[0]),
-                    handler: function (title, idx) {
-                        if (idx >= 0) {
-                            commands[idx][1]();
-                        }
-                    },
-                    finished: function (cancelled) {
-                        // nothing?
-                    }
-                });
-            }
-        };
-
-        this._tabTemplate = {
-            props: {},
-            views: [
-                {
-                    type: "view",
-                    props: {
-                        id: "tab-rectangle"
-                    },
-                    layout: $layout.fill,
-                    views: [
-                        {
-                            type: "label",
-                            props: {
-                                id: "tab-name",
-                                align: $align.center,
-                                font: $font(SIZE_TAB_FONT)
-                            },
-                            layout: (make, view) => {
-                                make.height.equalTo(view.super.height);
-                                make.width.equalTo(view.super.width).offset(-30);
-                                make.left.equalTo(view.super.left).offset(25);
-                            }
-                        }
-                    ]
-                },
-                {
-                    type: "button",
-                    props: {
-                        id: "close-button",
-                        icon: $icon(
-                            "225",
-                            $rgba(140, 140, 140, 0.8),
-                            $size(SIZE_TAB_CLOSE_ICON_BUTTON, SIZE_TAB_CLOSE_ICON_BUTTON)
-                        ),
-                        bgcolor: $color("clear")
-                    },
-                    events: {
-                        tapped: async () => {
-                            browser.closeTab(browser.tabs[browser.currentTabIndex]);
-                        }
-                    },
-                    layout: (make, view) => {
-                        make.left.equalTo(view.super.left).offset(5);
-                        make.top.inset(5);
-                    }
-                }
-            ]
-        };
-    }
-
-    get tabNames() {
-        let names = this._browser.tabs.map(tab => tab.title);
-        return  names;
-
-    }
-
-    get currentTabIndex() {
-        return this._browser.currentTabIndex;
+        this._verticalOffset = verticalOffset;
     }
 
     build() {
-        const data = this.tabNames.map((name, index) => {
-            if (index === this.currentTabIndex) {
-                return {
-                    "tab-name": {
-                        text: name
-                    },
-                    "tab-rectangle": {
-                        bgcolor: COLOR_TAB_BG_SELECTED,
-                        textColor: COLOR_TAB_FG_SELECTED,
-                        tabIndex: index
-                    }
-                };
-            } else {
-                return {
-                    "tab-name": {
-                        text: name
-                    },
-                    "tab-rectangle": {
-                        bgcolor: COLOR_TAB_BG_INACTIVE,
-                        textColor: COLOR_TAB_FG_INACTIVE,
-                        tabIndex: index
-                    },
-                    "close-button": {
-                        hidden: true
-                    }
-                };
-            }
-        });
-
-        if (!data || data.length === 0) {
-            return null;
-        }
-
-        return this._buildTabList(data);
-    }
-}
-
-class TabListVertical extends TabList {
-    constructor(browser) {
-        super(browser);
-    }
-
-    _buildTabList(data) {
         return {
-            type: "list",
-            events: this._eventHandlers,
+            type: "view",
             props: {
-                id: "pages-tab",
-                rowHeight: TAB_HEIGHT,
-                // spacing: 0,
-                template: this._tabTemplate,
-                data: data,
-                bgcolor: COLOR_TAB_LIST_BG,
-                borderWidth: 0
-            },
-            layout: (make, view) => {
-                make.width.equalTo(VERTICAL_TAB_WIDTH);
-                make.height.equalTo(view.super.height);
-                make.top.equalTo(view.super.top);
-                make.left.equalTo(0);
-            }
-        };
-    }
-}
-
-class TabListHorizontal extends TabList {
-    constructor(browser) {
-        super(browser);
-    }
-
-    _buildTabList(data) {
-        return {
-            type: "matrix",
-            events: this._eventHandlers,
-            props: {
-                id: "pages-tab",
-                columns: data.length,
-                itemHeight: TAB_HEIGHT,
-                spacing: 0,
-                template: this._tabTemplate,
-                data: data
+                bgcolor: $color("clear"),
             },
             layout: (make, view) => {
                 make.width.equalTo(view.super.width);
-                make.height.equalTo(TAB_HEIGHT);
-                make.top.equalTo(view.super);
+                make.height.equalTo(view.super.height).offset(-this._verticalOffset);
+                make.top.equalTo(view.super.top).offset(this._verticalOffset);
                 make.left.equalTo(view.super);
             }
-        };
+        }
     }
 }
 
-class TabAndContentContainer extends Component {
-    constructor(vertical, verticalOffset) {
+class TabContentHolder extends Component {
+    constructor(browser) {
         super();
-        this._verticalOffset = verticalOffset;
-    //                 this.tabs.forEach((tab, index) => {
-    //   if (tab.element) {
-    //     tab.element.hidden = index !== tabIndexToShow;
-    //   }
-    // });
+        this.config = browser.config;
     }
 
     build() {
@@ -330,23 +143,21 @@ class TabAndContentContainer extends Component {
                 bgcolor: $color("clear")
             },
             layout: (make, view) => {
-                // TODO: vertical
-                make.width.equalTo(view.super.width);
-                make.height.equalTo(view.super.height).offset(this._verticalOffset);
-                make.top.equalTo(view.super.top).offset(this._verticalOffset);
-                make.left.equalTo(0);
+                if (this.config.TAB_VERTICAL) {
+                    make.width.equalTo(view.super.width).offset(-this.config.TAB_VERTICAL_WIDTH);
+                    make.height.equalTo(view.super.height);
+                    make.top.equalTo(view.super.top);
+                    make.left.equalTo(view.super).offset(this.config.TAB_VERTICAL_WIDTH);
+                } else {
+                    make.width.equalTo(view.super.width);
+                    make.height.equalTo(view.super.height);
+                    make.top.equalTo(view.super.top).offset(this.config.TAB_HEIGHT);
+                    make.left.equalTo(view.super);
+               }
             }
         }
     }
 }
-
-//
-//     }
-//
-//     build() {
-//
-//     }
-// }
 
 // -------------------------------------------------------------------- //
 // Browser class
@@ -356,11 +167,10 @@ class TabBrowser extends Component {
   /**
    * Tab browser (maintain collection of tabs)
    */
-
   constructor(userScript, onInitialize, config) {
-    super(null);
+    super();
+    this._config = config;
 
-    this.config = config;
     this.userScript = userScript;
     this.currentTabIndex = 0;
     this.tabs = [];
@@ -389,9 +199,15 @@ class TabBrowser extends Component {
     const toolbar = new ToolBar(TOPBAR_HEIGHT);
     this._toolbar = toolbar;
 
-    const tabAndContentContainer = new TabAndContentContainer(false, TOPBAR_HEIGHT);
+    const tabAndContentContainer = new TabAndContentContainer(TOPBAR_HEIGHT);
+    this._tabAndContentContainer = tabAndContentContainer;
 
-    const tabList = new TabListVertical(browser);
+    // const tabListContentSeparator = ;
+
+    const tabContentHolder = new TabContentHolder(browser);
+    this._tabContentHolder = tabContentHolder;
+
+    const tabList = config.TAB_VERTICAL ? new TabListVertical(browser) : new TabListHorizontal(browser);
     this._tabList = tabList;
 
       rightToolBar
@@ -415,7 +231,8 @@ class TabBrowser extends Component {
       ;
 
       tabAndContentContainer
-          .addChild(tabList);
+          .addChild(tabList)
+          .addChild(tabContentHolder);
 
       browser
           .addChild(completion)
@@ -427,6 +244,10 @@ class TabBrowser extends Component {
     this.render();
   }
 
+  get config() {
+      return this._config;
+  }
+
   build() {
     let browser = this;
 
@@ -436,7 +257,7 @@ class TabBrowser extends Component {
         title: "iKeySnail",
         statusBarHidden: this.config.HIDE_STATUSBAR,
         navBarHidden: this.config.HIDE_TOOLBAR,
-        bgcolor: COLOR_CONTAINER_BG
+        // bgcolor: COLOR_CONTAINER_BG
       },
       events: {
         appeared: sender => {
@@ -549,9 +370,12 @@ __keysnail__.runPanel(${JSON.stringify(candidates)}, {
     this.selectedTab.showBookmark();
   }
 
-  _appendElementToView(elementSource) {
-    this.ui = $("browser-container");
-    this.ui.add(elementSource);
+  goBack() {
+      this.selectedTab.goBack();
+  }
+
+  goForward() {
+      this.selectedTab.goForward();
   }
 
   share() {
@@ -589,8 +413,7 @@ ${tab.url}
     let tabToRetain = this.tabs[tabIndexToRetain];
     this.tabs.forEach((tab, index) => {
       if (index !== tabIndexToRetain && tab.loaded) {
-        tab.visitURL(null); // Expect early GC
-        tab.element.remove();
+        tab.destroy();
       }
     });
     this.tabs = [tabToRetain];
@@ -607,14 +430,44 @@ ${tab.url}
     } else {
       tab.visitURL(null); // Expect early GC
       let index = this.tabs.indexOf(tab);
-      tab.element.remove();
+      tab.removeMe();
       if (index >= 0) {
         this.tabs.splice(index, 1);
       }
       this.selectTab(Math.max(0, this.currentTabIndex - 1));
     }
   }
-
+  
+  _createNewTabInternal(url, tabTitle = null) {
+    let tab = new TabContentWebView(
+        this,
+        this.config,
+        url,
+        this.userScript
+    );
+    if (tabTitle) {
+        tab._title = tabTitle;
+    }
+    this._tabContentHolder.addChild(tab);
+    this.tabs.push(tab);
+    return tab;
+  }
+  
+  /**
+   * タブを新規に作成
+   * @param {string} url
+   * @param {boolean} selectNewTab
+   */
+  createNewTabs(urls, tabIndexToSelect = -1, titles = []) {
+    urls.forEach((url, idx) => {
+      let title = titles ? titles[idx] : null;
+      this._createNewTabInternal(url, title);
+    });
+    if (tabIndexToSelect >= 0) {
+      this.selectTab(tabIndexToSelect);
+    }
+  }
+  
   /**
    * タブを新規に作成
    * @param {string} url
@@ -624,59 +477,27 @@ ${tab.url}
     if (!url) {
       url = this.config.NEW_PAGE_URL;
     }
-    let tab = new Tab(
-        this,
-        this.config,
-        url,
-        this.userScript
-    );
-    this.tabs.push(tab);
+    let tab = this._createNewTabInternal(url);
+    // TODO: Create rendering stop option
     if (selectNewTab) {
-      this.selectTab(this.tabs.length - 1);
+      this.selectTab(this.tabs.indexOf(tab));
     } else {
-      this._updateTabView();
+      this._tabAndContentContainer.render();
     }
-  }
-
-  /**
-   * 現在の状態に合わせて UI を更新
-   */
-  _updateTabView() {
-    if (this.tabs.length) {
-      let tabIndex = this.currentTabIndex;
-      this._updateTabContentVisibility(tabIndex);
-      this._updateTabListAppearance(tabIndex);
-    }
-  }
-
-  /**
-   * WebView -> currentTabIndex 以外の tab content を隠す
-   */
-  _updateTabContentVisibility(tabIndexToShow) {
-    // this._tabContents.render();
-      this.tabs.forEach((tab, index) => {
-          if (tab.element) {
-              tab.element.hidden = index !== tabIndexToShow;
-          }
-      });
-
-  }
-
-  /**
-   * タブ表示部分を更新
-   * @param {int} tabIndexToShow
-   * @param {[string]} tabNames
-   */
-  _updateTabListAppearance(tabIndexToShow) {
-    this._tabList.render();
   }
 
   selectTab(tabIndexToSelect) {
     this.currentTabIndex = tabIndexToSelect;
-    let tab = this.tabs[this.currentTabIndex];
-    this.setURLView(tab.url);
-    tab.select();
-    this._updateTabView();
+    // TODO: ugly?
+    this.tabs.forEach((tab, index) => {
+        if (index === tabIndexToSelect) {
+            tab.select();
+            this.setURLView(tab.url);
+        } else {
+            tab.deselect();
+        }
+    });
+    this._tabList.render();
   }
 
   /**
@@ -700,6 +521,8 @@ ${tab.url}
 
 // Session to start
 function startSession(urlToVisit) {
+    const config = loadConfig();
+
   let lastTabs = [];
   let lastTabIndex = 0;
   let tabTitles = null;
@@ -711,31 +534,24 @@ function startSession(urlToVisit) {
       lastTabs.push({ url: tabUrls[i], title: tabTitles[i] });
     }
   } catch (x) {}
-
+  
   let browser = new TabBrowser(readUserScript(), (browser) => {
     browser.history = loadHistory();
 
-
-    if (lastTabs.length) {
-      lastTabs.forEach(tabInfo => {
-        let tab = new Tab(browser, config, tabInfo.url, browser.userScript);
-        if (tabInfo.title) {
-          tab._title = tabInfo.title;
-        }
-        browser._appendElementToView(tab.elementSource);
-        browser.tabs.push(tab);
-        if (!config.TAB_LAZY_LOADING) {
-          tab.load();
-        }
-      });
-      if (urlToVisit) {
-        browser.createNewTab(urlToVisit, true);
+      if (lastTabs.length) {
+          browser.createNewTabs(
+              lastTabs.map(t => t.url),
+              lastTabIndex,
+              lastTabs.map(t => t.title)
+          );
+          if (urlToVisit) {
+              browser.createNewTab(urlToVisit, true);
+          } else {
+              browser.selectTab(lastTabIndex);
+          }
       } else {
-        browser.selectTab(lastTabIndex);
+          browser.createNewTab(urlToVisit || config.NEW_TAB_URL, true);
       }
-    } else {
-      browser.createNewTab(urlToVisit || config.NEW_TAB_URL, true);
-    }
   }, config);
 
   $app.listen({
@@ -877,17 +693,5 @@ function startSession(urlToVisit) {
 
 /* $app.autoKeyboardEnabled = true; */
 
-function decideURLToVisit() {
-  let queryUrl = $context.query.url;
-  for (let { alias, url } of config.sites) {
-    if (alias === queryUrl) {
-      return url;
-    }
-  }
-  if (queryUrl) {
-    return queryUrl;
-  }
-  return null;
-}
 
-startSession(decideURLToVisit());
+startSession($context.query.url || null);

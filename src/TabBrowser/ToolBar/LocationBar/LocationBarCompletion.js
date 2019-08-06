@@ -289,10 +289,12 @@ class Suggestion {
     }
 
     static execAction(suggestion, browser) {
+        browser.visitURL(suggestion.url);
+        browser.blurLocationBar();
     }
 
     get iconType() {
-        return "000";
+        return "star.fill";
     }
 
     get icon() {
@@ -374,9 +376,11 @@ class SuggestionBookmark extends Suggestion {
     }
 }
 
+const SUGGESTION_GOOGLE = "https://www.google.com/complete/search?client=chrome-omni&gs_ri=chrome-ext&oit=1&cp=1&pgcl=7&q=";
+
 class SuggestionWebQuery extends Suggestion {
-    constructor(query) {
-        super(query, "suggested by Google");
+    constructor(query, name) {
+        super(query, "Suggested by " + name);
     }
 
     get urlReadable() {
@@ -392,10 +396,8 @@ class SuggestionWebQuery extends Suggestion {
         browser.blurLocationBar();
     }
 
-    static generateByQuery(query, browser) {
-        const completionURL =
-            "https://www.google.com/complete/search?client=chrome-omni&gs_ri=chrome-ext&oit=1&cp=1&pgcl=7&q=" +
-            encodeURIComponent(query);
+    static generateByQuery(query, browser, endPoint = SUGGESTION_GOOGLE) {
+        const completionURL = SUGGESTION_GOOGLE + encodeURIComponent(query);
         return new Promise((resolve, reject) => {
             $http.request({
                 method: "GET",
@@ -404,7 +406,40 @@ class SuggestionWebQuery extends Suggestion {
                     if (resp.error) {
                         reject(resp.error);
                     } else {
-                        resolve(resp.data[1].map(title => new SuggestionWebQuery(title)));
+                        resolve(resp.data[1].map(title => new SuggestionWebQuery(title, "Google")));
+                    }
+                }
+            });
+        });
+    }
+}
+
+class SuggestionScrapbox extends Suggestion {
+    constructor(query, url) {
+        super(query, url);
+    }
+
+    get iconType() {
+        return "dollarsign.square";
+    }
+
+    static generateByQuery(query, browser) {
+        const userName = browser.config.SCRAPBOX_USER;
+        const completionURL =
+            `https://scrapbox.io/api/pages/${userName}/search/query?skip=0&sort=updated&limit=30&q=` +
+            encodeURIComponent(query);
+        return new Promise((resolve, reject) => {
+            $http.request({
+                method: "GET",
+                url: completionURL,
+                handler: function (resp) {
+                    if (resp.error || resp.data.statusCode === 401) {
+                        resolve(null);
+                    } else {
+                        resolve(resp.data.pages.map(p => new SuggestionScrapbox(
+                            p.title,
+                            `https://scrapbox.io/${userName}/${encodeURIComponent(p.title)}`
+                        )));
                     }
                 }
             });
@@ -413,7 +448,9 @@ class SuggestionWebQuery extends Suggestion {
 }
 
 exports.LocationBarCompletion = LocationBarCompletion;
+exports.Suggestion = Suggestion;
 exports.SuggestionTab = SuggestionTab;
 exports.SuggestionBookmark = SuggestionBookmark;
 exports.SuggestionWebQuery = SuggestionWebQuery;
 exports.SuggestionHistory = SuggestionHistory;
+exports.SuggestionScrapbox = SuggestionScrapbox;

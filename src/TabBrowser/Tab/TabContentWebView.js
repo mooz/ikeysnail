@@ -22,8 +22,6 @@ class TabContentWebView extends Component {
         this.url = url;
         this._loaded = false;
 
-        console.log("Tab initializing");
-
         let tab = this;
         this.eventHandler = {
             log: ({message}) => {
@@ -32,7 +30,11 @@ class TabContentWebView extends Component {
                 }
             },
             titleDetermined: ({title}) => {
-                this.title = title;
+                if (this.element.url === "about:blank") {
+                    this.title = "New Tab";
+                } else {
+                    this.title = title;
+                }
                 this.browser.onTabTitleDetermined(this);
             },
             didFinish: async sender => {
@@ -63,7 +65,8 @@ class TabContentWebView extends Component {
                 this.browser.closeTab(tab);
             },
             createNewTab: () => {
-                this.browser.createNewTab(null, true);
+                this.browser.createNewTab("about:blank", true);
+                this.browser.focusLocationBar();
             },
             selectNextTab: () => {
                 this.browser.selectNextTab();
@@ -93,6 +96,11 @@ class TabContentWebView extends Component {
         };
     }
 
+    destroy() {
+        this.visitURL(null); // Expect early GC
+        this.removeMe();
+    }
+
     get selected() {
         const browser = this.browser;
         return this === browser.selectedTab;
@@ -102,8 +110,17 @@ class TabContentWebView extends Component {
         return this._loaded;
     }
 
+    deselect() {
+        if (this.element) {
+            this.element.hidden = true;
+        }
+    }
+
     select() {
         this.load();
+        if (this.element.hidden) {
+            this.element.hidden = false;
+        }
         // https://github.com/WebKit/webkit/blob/39a299616172a4d4fe1f7aaf573b41020a1d7358/Source/WebKit/UIProcess/API/Cocoa/WKWebView.mm#L1318
         this.runtimeWebView.$becomeFirstResponder();
     }
@@ -117,7 +134,7 @@ class TabContentWebView extends Component {
 
     get url() {
         let url = null;
-        if (this._loaded) {
+        if (this.element) {
             url = this.element.url;
         } else {
             url = this._url;
@@ -139,11 +156,19 @@ class TabContentWebView extends Component {
 
     set title(value) {
         this._title = value;
-        this.browser._updateTabView();
+        this.browser._tabList.render();
     }
 
     showBookmark() {
         evalScript(this, "__keysnail__.startSiteSelector(true)");
+    }
+
+    goBack() {
+        this.element.goBack();
+    }
+
+    goForward() {
+        this.element.goForward();
     }
 
     visitURL(url) {
@@ -152,10 +177,9 @@ class TabContentWebView extends Component {
 
     load() {
         if (this._loaded) return;
-        let source = this.createWidgetTabContent(this.url, this.userScript);
-        this.browser._appendElementToView(source);
-        this.runtimeWebView.$setAllowsBackForwardNavigationGestures(true);
         this._loaded = true;
+        this.render();
+        this.runtimeWebView.$setAllowsBackForwardNavigationGestures(true);
     }
 
     get runtimeWebView() {
@@ -174,7 +198,12 @@ class TabContentWebView extends Component {
         evalScript(this, `__keysnail__.dispatchKey("ctrl- ", false, true)`);
     }
 
-    createWidgetTabContent(url, userScript) {
+
+    build() {
+        if (!this._loaded) return null;
+      
+        let url = this.url;
+        let userScript = this.userScript;
         let props = {
             id: this.id,
             ua: this.config.USER_AGENT,
@@ -183,21 +212,12 @@ class TabContentWebView extends Component {
             url: url
         };
 
-
         return {
             type: "web",
             props: props,
             events: this.eventHandler,
             layout: (make, view) => {
-                if (this.config.TAB_VERTICAL) {
-                    make.edges
-                        .equalTo(view.super)
-                        .insets($insets(this.config.TOPBAR_HEIGHT + 1, VERTICAL_TAB_WIDTH, 0, 0));
-                } else {
-                    make.edges
-                        .equalTo(view.super)
-                        .insets($insets(this.config.TOPBAR_HEIGHT + TAB_HEIGHT + 1, 0, 0, 0));
-                }
+                make.edges.equalTo(view.super);
             }
         };
     }
@@ -238,4 +258,4 @@ function evalScript(tab, contentScript, promisify = true) {
     }
 }
 
-exports.Tab = TabContentWebView;
+exports.TabContentWebView = TabContentWebView;

@@ -86,9 +86,12 @@ class Component {
             this.children[childIndex].element.remove();
             this.children.splice(childIndex, 1);
         } else {
-
             throw "Child not found";
         }
+    }
+
+    removeMe() {
+        this._parent.removeChild(this);
     }
 
     get runtime() {
@@ -144,12 +147,6 @@ class Component {
             if (this.element) {
                 this.element.remove();
             }
-
-            // console.log("$$$$$$$$$$$$$$$$$$$$$");
-            console.log(viewSource);
-            // console.log("XXXXXXXXXXXXXXXXXXXXXXXXXX");
-            // console.log($(this._parent.id));
-
             $(this._parent.id).add(viewSource);
         } else {
             // **** Root element ****
