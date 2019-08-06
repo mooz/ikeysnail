@@ -391,7 +391,7 @@ ${tab.url}
 `;
 
     this.createNewTab(
-      `https://scrapbox.io/stillpedant/${encodeURIComponent(
+      `https://scrapbox.io/${this.config.SCRAPBOX_USER}/${encodeURIComponent(
         tab.title
       )}?body=${encodeURIComponent(content)}`,
       true
@@ -405,7 +405,7 @@ ${tab.url}
     });
   }
 
-  openInExternalBrowser(tabIndex) {
+    openInExternalBrowser(tabIndex) {
     $app.openURL(this.tabs[tabIndex].url);
   }
 
