@@ -79,7 +79,7 @@ class TabList extends Component {
                     },
                     events: {
                         tapped: async () => {
-                            browser.closeTab(browser._tabs[browser.currentTabIndex]);
+                            browser.closeCurrentTab();
                         }
                     },
                     layout: (make, view) => {

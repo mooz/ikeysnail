@@ -412,6 +412,10 @@ ${tab.url}
     this.selectTab(0);
   }
 
+  closeCurrentTab() {
+    return this.closeTab(browser._tabs[browser.currentTabIndex]);
+  }
+
   /**
    * タブを閉じる
    * @param {*} tab 閉じるタブ
