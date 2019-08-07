@@ -34,8 +34,8 @@ function loadTabInfo() {
 }
 
 function saveTabInfo(browser) {
-  let tabURLs = browser.tabs.map(tab => tab.url);
-  let tabTitles = browser.tabs.map(tab => tab.title);
+  let tabURLs = browser._tabs.map(tab => tab.url);
+  let tabTitles = browser._tabs.map(tab => tab.title);
     let lastTabIndex = browser.currentTabIndex;
   let lastTabInfo = [tabURLs, lastTabIndex, tabTitles];
   $file.write({
@@ -173,7 +173,7 @@ class TabBrowser extends Component {
 
     this.userScript = userScript;
     this.currentTabIndex = 0;
-    this.tabs = [];
+    this._tabs = [];
     this._pastURLs = [];
     this._pastTitles = [];
     this._onInitialize = onInitialize;
@@ -316,16 +316,15 @@ class TabBrowser extends Component {
   }
 
   get selectedTab() {
-    return this.tabs[this.currentTabIndex];
+    return this._tabs[this.currentTabIndex];
   }
 
   selectTabsByPanel() {
-    let browser = this;
-    let candidates = browser.tabs.map((tab, index) => ({
+    let candidates = this._tabs.map((tab, index) => ({
       text: tab.title,
       url: tab.url
     }));
-    let initialIndex = browser.tabs.indexOf(this.selectedTab);
+    let initialIndex = this._tabs.indexOf(this.selectedTab);
     this.selectedTab.evalScript(`
 __keysnail__.runPanel(${JSON.stringify(candidates)}, {
   toggle: true,
@@ -401,22 +400,22 @@ ${tab.url}
   copyTabInfo(tabIndex) {
     $clipboard.set({
       type: "public.plain-text",
-      value: this.tabs[tabIndex].url
+      value: this._tabs[tabIndex].url
     });
   }
 
     openInExternalBrowser(tabIndex) {
-    $app.openURL(this.tabs[tabIndex].url);
+    $app.openURL(this._tabs[tabIndex].url);
   }
 
   closeTabsBesides(tabIndexToRetain) {
-    let tabToRetain = this.tabs[tabIndexToRetain];
-    this.tabs.forEach((tab, index) => {
+    let tabToRetain = this._tabs[tabIndexToRetain];
+    this._tabs.forEach((tab, index) => {
       if (index !== tabIndexToRetain && tab.loaded) {
         tab.destroy();
       }
     });
-    this.tabs = [tabToRetain];
+    this._tabs = [tabToRetain];
     this.selectTab(0);
   }
 
@@ -425,14 +424,14 @@ ${tab.url}
    * @param {*} tab 閉じるタブ
    */
   closeTab(tab) {
-    if (this.tabs.length <= 1) {
-      this.tabs[0].visitURL(this.config.NEW_PAGE_URL);
+    if (this._tabs.length <= 1) {
+      this._tabs[0].visitURL(this.config.NEW_PAGE_URL);
     } else {
       tab.visitURL(null); // Expect early GC
-      let index = this.tabs.indexOf(tab);
+      let index = this._tabs.indexOf(tab);
       tab.removeMe();
       if (index >= 0) {
-        this.tabs.splice(index, 1);
+        this._tabs.splice(index, 1);
       }
       this.selectTab(Math.max(0, this.currentTabIndex - 1));
     }
@@ -449,7 +448,7 @@ ${tab.url}
         tab._title = tabTitle;
     }
     this._tabContentHolder.addChild(tab);
-    this.tabs.push(tab);
+    this._tabs.push(tab);
     return tab;
   }
   
@@ -480,7 +479,7 @@ ${tab.url}
     let tab = this._createNewTabInternal(url);
     // TODO: Create rendering stop option
     if (selectNewTab) {
-      this.selectTab(this.tabs.indexOf(tab));
+      this.selectTab(this._tabs.indexOf(tab));
     } else {
       this._tabAndContentContainer.render();
     }
@@ -489,7 +488,7 @@ ${tab.url}
   selectTab(tabIndexToSelect) {
     this.currentTabIndex = tabIndexToSelect;
     // TODO: ugly?
-    this.tabs.forEach((tab, index) => {
+    this._tabs.forEach((tab, index) => {
         if (index === tabIndexToSelect) {
             tab.select();
             this.setURLView(tab.url);
@@ -504,7 +503,7 @@ ${tab.url}
    * Select next tab
    */
   selectNextTab() {
-    this.selectTab((this.currentTabIndex + 1) % this.tabs.length);
+    this.selectTab((this.currentTabIndex + 1) % this._tabs.length);
   }
 
   /**
@@ -512,7 +511,7 @@ ${tab.url}
    */
   selectPreviousTab() {
     if (this.currentTabIndex - 1 < 0) {
-      this.selectTab(this.tabs.length - 1);
+      this.selectTab(this._tabs.length - 1);
     } else {
       this.selectTab(this.currentTabIndex - 1);
     }

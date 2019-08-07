@@ -322,8 +322,8 @@ class SuggestionTab extends Suggestion {
     }
 
     static async generateByQuery(query, browser) {
-        const urls = browser.tabs.map(tab => tab.url);
-        const titles = browser.tabs.map(tab => tab.title);
+        const urls = browser._tabs.map(tab => tab.url);
+        const titles = browser._tabs.map(tab => tab.title);
         const result = await findPageEntriesByQuery(query, urls, titles, false, true);
         return result.map(idx => new SuggestionTab(titles[idx], urls[idx], idx));
     }

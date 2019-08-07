@@ -79,7 +79,7 @@ class TabList extends Component {
                     },
                     events: {
                         tapped: async () => {
-                            browser.closeTab(browser.tabs[browser.currentTabIndex]);
+                            browser.closeTab(browser._tabs[browser.currentTabIndex]);
                         }
                     },
                     layout: (make, view) => {
@@ -92,9 +92,8 @@ class TabList extends Component {
     }
 
     get tabNames() {
-        let names = this._browser.tabs.map(tab => tab.title);
+        let names = this._browser._tabs.map(tab => tab.title);
         return names;
-
     }
 
     get currentTabIndex() {
