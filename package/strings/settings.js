@@ -4,7 +4,7 @@ const setup = (config, keysnail, isContent) => {
     config.DEBUG_SHOW_MESSAGE = false;
 
     config.TAB_HEIGHT = 30;
-    config.TAB_VERTICAL = true;
+    config.TAB_VERTICAL = false;
     config.TAB_VERTICAL_WIDTH = 250;
     config.TAB_LAZY_LOADING = true;
     config.SIZE_TAB_FONT = 13;
