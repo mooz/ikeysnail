@@ -8,7 +8,6 @@ const {LocationBarCompletion} = require("TabBrowser/ToolBar/LocationBar/Location
 const {TabListHorizontal} = require("TabBrowser/TabList");
 const {TabListVertical} = require("TabBrowser/TabList");
 
-
 function readMinified(prefix) {
   if ($file.exists(prefix + ".min.js")) {
     return $file.read(prefix + ".min.js").string;
@@ -180,10 +179,6 @@ class TabBrowser extends Component {
 
     const TOPBAR_HEIGHT = config.TOPBAR_HEIGHT;
 
-    this.id = "browser-container";
-
-    let browser = this;
-
      // Width ratio computation
     const LOCATION_WIDTH_RATIO = 0.5;
     const TOOLBAR_CONTAINER_WIDTH_RATIO = (1.0 - LOCATION_WIDTH_RATIO) / 2;
@@ -191,9 +186,9 @@ class TabBrowser extends Component {
     let leftToolBar = new ToolBarButtonContainer("left", TOOLBAR_CONTAINER_WIDTH_RATIO);
     let rightToolBar = new ToolBarButtonContainer("right", TOOLBAR_CONTAINER_WIDTH_RATIO);
 
-    let completion = new LocationBarCompletion(browser, TOPBAR_HEIGHT);
+    let completion = new LocationBarCompletion(this, TOPBAR_HEIGHT);
     const locationBar = new LocationBar(this, completion, LOCATION_WIDTH_RATIO);
-    browser._locationBar = locationBar;
+    this._locationBar = locationBar;
     completion.locationBar = locationBar;
 
     const toolbar = new ToolBar(TOPBAR_HEIGHT);
@@ -202,25 +197,23 @@ class TabBrowser extends Component {
     const tabAndContentContainer = new TabAndContentContainer(TOPBAR_HEIGHT);
     this._tabAndContentContainer = tabAndContentContainer;
 
-    // const tabListContentSeparator = ;
-
-    const tabContentHolder = new TabContentHolder(browser);
+    const tabContentHolder = new TabContentHolder(this);
     this._tabContentHolder = tabContentHolder;
 
-    const tabList = config.TAB_VERTICAL ? new TabListVertical(browser) : new TabListHorizontal(browser);
+    const tabList = config.TAB_VERTICAL ? new TabListVertical(this) : new TabListHorizontal(this);
     this._tabList = tabList;
 
       rightToolBar
-          .addChild(new ToolBarButton("rectangle.on.rectangle", () => browser.selectTabsByPanel()))
-          .addChild(new ToolBarButton("plus", () => browser.createNewTab(null, true)))
-          .addChild(new ToolBarButton("square.and.arrow.up", () => browser.share()))
+          .addChild(new ToolBarButton("rectangle.on.rectangle", () => this.selectTabsByPanel()))
+          .addChild(new ToolBarButton("plus", () => this.createNewTab(null, true)))
+          .addChild(new ToolBarButton("square.and.arrow.up", () => this.share()))
       ;
 
       leftToolBar
           .addChild(new ToolBarButton("multiply", () => $app.close()))
-          .addChild(new ToolBarButton("chevron.left", () => browser.goBack()))
-          .addChild(new ToolBarButton("chevron.right", () => browser.goForward()))
-          .addChild(new ToolBarButton("book", () => browser.showBookmark()))
+          .addChild(new ToolBarButton("chevron.left", () => this.goBack()))
+          .addChild(new ToolBarButton("chevron.right", () => this.goForward()))
+          .addChild(new ToolBarButton("book", () => this.showBookmark()))
       ;
 
       // Declare view relationship
@@ -234,7 +227,7 @@ class TabBrowser extends Component {
           .addChild(tabList)
           .addChild(tabContentHolder);
 
-      browser
+      this
           .addChild(completion)
           .addChild(toolbar)
           .addChild(tabAndContentContainer)
@@ -603,6 +596,8 @@ function startSession(urlToVisit) {
         "ctrl-n": () => browser.selectLocationBarNextCandidate(),
         "ctrl-m": () => browser.decideLocationBarCandidate(),
         "ctrl-g": () => browser.blurLocationBar(),
+        "ctrl-meta-j": () => browser.selectNextTab(),
+        "ctrl-meta-k": () => browser.selectPreviousTab(),
         Escape: () => browser.blurLocationBar()
       };
 
