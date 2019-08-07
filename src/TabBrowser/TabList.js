@@ -147,49 +147,23 @@ class TabListVertical extends TabList {
 
     _buildTabList(data) {
         return {
-            type: "view",
+            type: "list",
+            events: this._eventHandlers,
             props: {
-                userInteractionEnabled: false
+                id: "pages-tab",
+                rowHeight: this.config.TAB_HEIGHT,
+                // spacing: 0,
+                template: this._tabTemplate,
+                data: data,
+                bgcolor: COLOR_TAB_LIST_BG,
+                borderWidth: 0
             },
             layout: (make, view) => {
-                make.width.equalTo(view.super);
+                make.width.equalTo(this.config.TAB_VERTICAL_WIDTH);
                 make.height.equalTo(view.super);
                 make.top.equalTo(view.super);
                 make.left.equalTo(view.super);
-            },
-            views: [
-                {
-                    type: "list",
-                    events: this._eventHandlers,
-                    props: {
-                        id: "pages-tab",
-                        rowHeight: this.config.TAB_HEIGHT,
-                        // spacing: 0,
-                        template: this._tabTemplate,
-                        data: data,
-                        bgcolor: COLOR_TAB_LIST_BG,
-                        borderWidth: 0
-                    },
-                    layout: (make, view) => {
-                        make.width.equalTo(this.config.TAB_VERTICAL_WIDTH);
-                        make.height.equalTo(view.super);
-                        make.top.equalTo(view.super);
-                        make.left.equalTo(view.super);
-                    }
-                },
-                {
-                    type: "view",
-                    props: {
-                        bgcolor: $color("#CCCCCC")
-                    },
-                    layout: (make, view) => {
-                        make.width.equalTo(view.super);
-                        make.height.equalTo(1);
-                        make.top.equalTo(view.super);
-                        make.left.equalTo(view.super);
-                    }
-                }
-            ]
+            }
         };
     }
 }
@@ -202,46 +176,22 @@ class TabListHorizontal extends TabList {
 
     _buildTabList(data) {
         return {
-            type: "view",
-            props: {},
+            type: "matrix",
+            events: this._eventHandlers,
+            props: {
+                id: "pages-tab",
+                columns: data.length,
+                itemHeight: this.config.TAB_HEIGHT,
+                spacing: 0,
+                template: this._tabTemplate,
+                data: data
+            },
             layout: (make, view) => {
-                make.width.equalTo(view.super.width);
-                make.height.equalTo(this.config.TAB_HEIGHT + 1);
+                make.width.equalTo(view.super);
+                make.height.equalTo(this.config.TAB_HEIGHT);
                 make.top.equalTo(view.super);
                 make.left.equalTo(view.super);
-            },
-            views: [
-                {
-                    type: "matrix",
-                    events: this._eventHandlers,
-                    props: {
-                        id: "pages-tab",
-                        columns: data.length,
-                        itemHeight: this.config.TAB_HEIGHT,
-                        spacing: 0,
-                        template: this._tabTemplate,
-                        data: data
-                    },
-                    layout: (make, view) => {
-                        make.width.equalTo(view.super);
-                        make.height.equalTo(this.config.TAB_HEIGHT);
-                        make.top.equalTo(view.super);
-                        make.left.equalTo(view.super);
-                    }
-                },
-                {
-                    type: "view",
-                    props: {
-                        bgcolor: $color("#CCCCCC")
-                    },
-                    layout: (make, view) => {
-                        make.width.equalTo(view.super);
-                        make.height.equalTo(1);
-                        make.top.equalTo(this.config.TAB_HEIGHT);
-                        make.left.equalTo(view.super);
-                    }
-                }
-            ]
+            }
         };
     }
 }
