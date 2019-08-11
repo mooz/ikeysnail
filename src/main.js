@@ -474,6 +474,7 @@ ${tab.url}
         if (!url) {
             url = this.config.NEW_PAGE_URL;
         }
+        url = convertURLLikeInputToURL(url);
         let tab = this._createNewTabInternal(url);
         // TODO: Create rendering stop option
         if (selectNewTab) {
