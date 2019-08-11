@@ -102,7 +102,7 @@ class TabContentWebView extends Component {
                 if (!url) {
                     url = $clipboard.text;
                 }
-                this.browser.createNewTab(convertURLLikeInputToURL(url), true);
+                this.browser.createNewTab(url, true);
             },
             selectTabsByPanel: () => {
                 browser.selectTabsByPanel();
