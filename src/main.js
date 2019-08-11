@@ -449,11 +449,6 @@ ${tab.url}
     return tab;
   }
   
-  /**
-   * タブを新規に作成
-   * @param {string} url
-   * @param {boolean} selectNewTab
-   */
   createNewTabs(urls, tabIndexToSelect = -1, titles = []) {
     urls.forEach((url, idx) => {
       let title = titles ? titles[idx] : null;
@@ -463,26 +458,21 @@ ${tab.url}
       this.selectTab(tabIndexToSelect);
     }
   }
-  
-  /**
-   * タブを新規に作成
-   * @param {string} url
-   * @param {boolean} selectNewTab
-   */
-  createNewTab(url, selectNewTab = false) {
-    if (!url) {
-      url = this.config.NEW_PAGE_URL;
-    }
-    let tab = this._createNewTabInternal(url);
-    // TODO: Create rendering stop option
-    if (selectNewTab) {
-      this.selectTab(this._tabs.indexOf(tab));
-    } else {
-      this._tabAndContentContainer.render();
-    }
-  }
 
-  selectTab(tabIndexToSelect) {
+    createNewTab(url, selectNewTab = false) {
+        if (!url) {
+            url = this.config.NEW_PAGE_URL;
+        }
+        let tab = this._createNewTabInternal(url);
+        // TODO: Create rendering stop option
+        if (selectNewTab) {
+            this.selectTab(this._tabs.indexOf(tab));
+        } else {
+            this._tabList.render();
+        }
+    }
+
+    selectTab(tabIndexToSelect) {
     this.currentTabIndex = tabIndexToSelect;
     // TODO: ugly?
     this._tabs.forEach((tab, index) => {

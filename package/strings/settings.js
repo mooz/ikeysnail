@@ -103,6 +103,7 @@ const setup = (config, keysnail, isContent) => {
             "o": () => $notify("focusLocationBar"),
             // o: () => keysnail.startSiteSelector(),
             "ctrl-a": () => $notify("selectTabsByPanel"),
+            E: () => keysnail.toggleHitHint(true),
             e: () => keysnail.toggleHitHint(),
             Escape: () => keysnail.escape(),
             "ctrl-g": () => keysnail.escape(),

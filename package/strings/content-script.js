@@ -11,6 +11,10 @@
     $notify("message", { message: msg, duration: duration });
   }
 
+  function createNewTab(url, openInBackground) {
+    $notify("createNewTab", { url, openInBackground });
+  }
+
   function inIframe() {
     try {
       return window.self !== window.top;
@@ -48,7 +52,7 @@
     selectedElm.dispatchEvent(ev);
   }
 
-  function hitHint(customSelector, customDisposer) {
+  function hitHint(customSelector, customDisposer, newTab) {
     // Thanks to https://qiita.com/okayu_tar_gz/items/924481d4acf50be37618
     const settings = {
       elm: {
@@ -215,8 +219,16 @@
 
           if (selectedElms.length === 1 && selectedElms[0].hintCh === input) {
             let selectedElm = selectedElms[0].elm;
-            selectedElm.focus();
-            clickElement(selectedElm);
+            if (newTab) {
+              if (selectedElm.href) {
+                createNewTab(selectedElm.href, true);
+              } else {
+                message("Element is clickable but no href found");
+              }
+            } else {
+              selectedElm.focus();
+              clickElement(selectedElm);
+            }
             fin();
           }
         }
@@ -963,15 +975,15 @@
         keysnail.focusFirstInput();
       }
     },
-    toggleHitHint: function() {
+    toggleHitHint: function(newTab) {
       if (keysnail.hitHintDisposer) {
         keysnail.hitHintDisposer();
       } else {
-        keysnail.startHitHint();
+        keysnail.startHitHint(newTab);
       }
     },
-    startHitHint: function() {
-      return hitHint();
+    startHitHint: function(newTab) {
+      return hitHint(null, null, newTab);
     },
     focusFirstInput: function() {
       let elements = Array.from(

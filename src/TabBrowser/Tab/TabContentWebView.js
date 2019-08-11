@@ -64,9 +64,15 @@ class TabContentWebView extends Component {
             closeTab: () => {
                 this.browser.closeTab(tab);
             },
-            createNewTab: () => {
-                this.browser.createNewTab("about:blank", true);
-                this.browser.focusLocationBar();
+            createNewTab: (args) => {
+                let { url, openInBackground } = args || { url: null, openInBackground: false };
+                this.browser.createNewTab(
+                    url || "about:blank",
+                    !openInBackground
+                );
+                if (!url) {
+                    this.browser.focusLocationBar();
+                }
             },
             selectNextTab: () => {
                 this.browser.selectNextTab();
