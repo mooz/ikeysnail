@@ -173,6 +173,7 @@ class TabBrowser extends Component {
     this.userScript = userScript;
     this.currentTabIndex = 0;
     this._tabs = [];
+    this._closedTabs = [];
     this._pastURLs = [];
     this._pastTitles = [];
     this._onInitialize = onInitialize;
@@ -404,8 +405,13 @@ ${tab.url}
   closeTabsBesides(tabIndexToRetain) {
     let tabToRetain = this._tabs[tabIndexToRetain];
     this._tabs.forEach((tab, index) => {
+      this._closedTabs.push({
+        url: tab.url,
+        title: tab.title
+      });
       if (index !== tabIndexToRetain && tab.loaded) {
-        tab.destroy();
+        tab.visitURL(null);
+        tab.removeMe();
       }
     });
     this._tabs = [tabToRetain];
@@ -421,10 +427,15 @@ ${tab.url}
    * @param {*} tab 閉じるタブ
    */
   closeTab(tab) {
+    this._closedTabs.push({
+      url: tab.url,
+      title: tab.title
+    });
+
     if (this._tabs.length <= 1) {
       this._tabs[0].visitURL(this.config.NEW_PAGE_URL);
     } else {
-      tab.visitURL(null); // Expect early GC
+      tab.visitURL(null);
       let index = this._tabs.indexOf(tab);
       tab.removeMe();
       if (index >= 0) {
@@ -502,6 +513,15 @@ ${tab.url}
     } else {
       this.selectTab(this.currentTabIndex - 1);
     }
+  }
+
+  undoClosedTab() {
+    if (!this._closedTabs.length) {
+      $ui.toast("No closed tabs in the history", 0.7);
+      return;
+    }
+    let tab = this._closedTabs.pop();
+    this.createNewTab(tab.url, true);
   }
 }
 

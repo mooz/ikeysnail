@@ -88,6 +88,9 @@ class TabContentWebView extends Component {
             selectPreviousTab: () => {
                 this.browser.selectPreviousTab();
             },
+            undoClosedTab: () => {
+                this.browser.undoClosedTab();
+            },
             focusLocationBar: () => {
                 this.browser.focusLocationBar();
             },
