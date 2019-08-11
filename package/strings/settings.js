@@ -200,7 +200,28 @@ const setup = (config, keysnail, isContent) => {
                     keysnail.dispatchKey("Backspace");
                 },
                 "ctrl-i": "ctrl-i",
-                "ctrl-t": "ctrl-t"
+                "ctrl-t": "ctrl-t",
+                "ctrl-c": {
+                    ".": () => {
+                        keysnail.insertText(new Date());
+                    },
+                    "ctrl-c": () => {
+                        // Toggle TODO
+                        keysnail.dispatchKey("Home");
+                        keysnail.dispatchKey("shift-End");
+                        const text = keysnail.getSelectedText();
+                        let replacedText = "";
+                        const todoPattern = /\[(?:TODO|DONE)\] /;
+                        if (todoPattern.test(text)) {
+                            replacedText = text.replace(todoPattern, (match) => match === "[TODO] " ? "[DONE] " : "");
+                        } else {
+                            let matched = text.match(/^([ \t]*)(.*)/);
+                            replacedText = matched[1] + "[TODO] " + matched[2];
+                        }
+                        keysnail.dispatchKey("Backspace");
+                        keysnail.insertText(replacedText);
+                    }
+                },
             }
         },
         style: `
