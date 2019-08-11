@@ -30,6 +30,7 @@ const setup = (config, keysnail, isContent) => {
             // "SuggestionScrapbox",
             "SuggestionWebQuery",
         ];
+        config.LOCATIONBAR_SUGGESTIONS_SYNCED = false;
     }
 
     // See
