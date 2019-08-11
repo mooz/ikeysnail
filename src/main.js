@@ -97,7 +97,7 @@ function readUserScript() {
 // ----------------------------------------------------------- //
 
 function convertURLLikeInputToURL(url) {
-    if (!/^https?:/.test(url)) {
+    if (!/^https?:/.test(url) && url !== "about:blank") {
         return "https://www.google.com/search?q=" + encodeURIComponent(url);
     }
     return url;
