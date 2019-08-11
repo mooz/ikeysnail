@@ -48,7 +48,11 @@ const setup = (config, keysnail, isContent) => {
             "ctrl-l": () => $notify("focusLocationBar"),
             "meta-t": () => $notify("createNewTab"),
             "ctrl-t": () => $notify("createNewTab"),
-            "ctrl-meta-g": () => $notify("openClipboardURL")
+            "ctrl-meta-g": () => $notify("openClipboardURL"),
+            "ctrl-x": {
+                k: () => $notify("closeTab"),
+                u: "meta-z"
+            }
         },
         rich: {
             "ctrl-g": () => keysnail.escape(),
@@ -60,7 +64,6 @@ const setup = (config, keysnail, isContent) => {
             "meta-f": keysnail.marked("ctrl-ArrowRight"),
             "meta-b": keysnail.marked("ctrl-ArrowLeft"),
             "meta-d": keysnail.marked("ctrl-Delete"),
-            "ctrl-x": "ctrl-x",
             "ctrl-_": "meta-z",
             "ctrl-z": "meta-z",
             "ctrl-s": "meta-f",
@@ -100,14 +103,25 @@ const setup = (config, keysnail, isContent) => {
             "ctrl-n": "ArrowDown"
         },
         view: {
-            d: () => $notify("closeTab"),
-            "o": () => $notify("focusLocationBar"),
+            d: {
+                d: () => $notify("closeTab")
+            },
+            o: {
+                g: () => $notify("focusLocationBar")
+            },
             // o: () => keysnail.startSiteSelector(),
             "ctrl-a": () => $notify("selectTabsByPanel"),
             e: () => keysnail.toggleHitHint(),
             Escape: () => keysnail.escape(),
             "ctrl-g": () => keysnail.escape(),
-            y: () => $notify("openClipboardURL"),
+            y: {
+                y: () => {
+                    $notify("copyText", { text: location.href });
+                    message("Copied: " + location.href);
+                }
+            },
+            u: () => $notify("undoClosedTab"),
+            p: () => $notify("openClipboardURL"),
             r: () => location.reload(),
             i: () => keysnail.focusEditor(),
             j: () => keysnail.scrollDown(),
@@ -122,7 +136,11 @@ const setup = (config, keysnail, isContent) => {
             H: () => keysnail.back(),
             F: () => keysnail.forward(),
             f: () => keysnail.focusFirstInput(),
-            g: () => keysnail.cursorTop(),
+            g: {
+                g: () => keysnail.cursorTop(),
+                i: () => keysnail.focusFirstInput(),
+                e: () => keysnail.focusEditor()
+            },
             G: () => keysnail.cursorBottom(),
             "ctrl-p": "ArrowUp",
             "ctrl-n": "ArrowDown",
