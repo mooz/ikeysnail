@@ -423,7 +423,8 @@
 
     if (typeof command === "object") {
       // sub key map
-      message("Keys: { " + Object.keys(command).join(", ") + " }");
+
+      // message("Keys: { " + Object.keys(command).join(", ") + " }");
       subKeyMap = command;
     } else {
       resetKeyStatus();
