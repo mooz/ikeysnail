@@ -340,6 +340,12 @@
     );
   }
 
+  const currentKeys = [];
+  let subKeyMap = null;
+  function resetKeyStatus() {
+    currentKeys.length = 0;
+    subKeyMap = null;
+  }
   const shortcutKeyHandler = keyEvent => {
     if (gHitHintDisposerInternal) {
       // Hit-Hint mode. Ignore.
@@ -370,42 +376,57 @@
     }
 
     const keyString = keyToString(keyEvent);
+    currentKeys.push(keyString);
 
     if (config.DEBUG_SHOW_INPUT_KEY) {
-      message("Input: " + keyString);
+      message("Input: " + currentKeys.join(" -> "));
     }
 
     let keepMark = false;
     let keyMap = gLocalKeyMap[mode];
 
-    if (
-      keyMap.hasOwnProperty(keyString) ||
-      gLocalKeyMap.all.hasOwnProperty(keyString)
-    ) {
-      let command = keyMap[keyString] || gLocalKeyMap.all[keyString];
-      if (!command) {
-        // "null" refers to disabled keymap
-        return;
+    function getCommand(keyString, keymaps) {
+      for (let keymap of keymaps) {
+        if (keymap && keymap.hasOwnProperty(keyString)) {
+          return keymap[keyString];
+        }
       }
-
-      keyEvent.stopPropagation();
-      keyEvent.preventDefault();
-
-      // `key: XXX` is abbreviation of `key: { command: XXX, marked: false }`
-      if (command.command) {
-        keepMark = !!command.marked;
-        command = command.command;
-      }
-      if (typeof command === "function") {
-        // Exec function
-        command();
-      } else {
-        keysnail.dispatchKey(command, keepMark);
-      }
+      return null;
     }
-    if (!keepMark) {
-      // Reset mark
-      gStatusMarked = false;
+
+    let command = getCommand(keyString, subKeyMap ? [subKeyMap] : [keyMap, gLocalKeyMap.all]);
+    if (!command) {
+      // Not found. Reset.
+      return resetKeyStatus();
+    }
+
+    keyEvent.stopPropagation();
+    keyEvent.preventDefault();
+
+    // `key: XXX` is abbreviation of `key: { command: XXX, marked: false }`
+    if (command.command) {
+      keepMark = !!command.marked;
+      command = command.command;
+    }
+
+    if (typeof command === "object") {
+      // sub key map
+      message("Keys: { " + Object.keys(command).join(", ") + " }");
+      subKeyMap = command;
+    } else {
+      resetKeyStatus();
+          if (typeof command === "function") {
+            // Exec function
+            command();
+          } else if (typeof command === "string") {
+            keysnail.dispatchKey(command, keepMark);
+          }
+
+          if (!keepMark) {
+            // Reset mark
+            gStatusMarked = false;
+          }
+
     }
   };
 
@@ -1050,7 +1071,7 @@
 #keysnail-popup * {
    box-sizing: border-box;
    font-family: "menlo" !important;
-   font-size: 15px !important;      
+   font-size: 15px !important;
 }
 #keysnail-popup {
      display: block !important;
@@ -1066,7 +1087,7 @@
      border: 1px solid rgba(0,0,0,0.5) !important;
      border-radius: 1ex !important;
      z-index: ${Z_INDEX_MAX - 10} !important;
-     text-overflow: ellipsis !important; 
+     text-overflow: ellipsis !important;
 }
 #keysnail-popup.hidden {
      display: none !important;
@@ -1089,7 +1110,7 @@
      outline: none !important;
      background-color: rgba(0,0,0,0.05);
  }
- 
+
  #keysnail-popup a {
      display: none;
      color: black !important;
@@ -1099,7 +1120,7 @@
      overflow: hidden;
  }
 
-#keysnail-popup a:after { 
+#keysnail-popup a:after {
      content: attr(href);
      display: block;
      font-size: 12px;
@@ -1123,7 +1144,7 @@
         padding: 2px !important;
         position: fixed !important;
         opacity: 0.8;
-        z-index: ${Z_INDEX_MAX};        
+        z-index: ${Z_INDEX_MAX};
 }
 `);
 
