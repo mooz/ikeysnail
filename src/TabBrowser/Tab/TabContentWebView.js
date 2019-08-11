@@ -37,6 +37,14 @@ class TabContentWebView extends Component {
                 }
                 this.browser.onTabTitleDetermined(this);
             },
+            decideNavigation: (sender, action) => {
+                if (!action.runtimeValue().$targetFrame()) {
+                    // target == _blank or something like that (targetFrame == nil)
+                    this.browser.createNewTab(action.requestURL, true);
+                    return false;
+                }
+                return true;
+            },
             didFinish: async sender => {
                 // Nothing?
             },

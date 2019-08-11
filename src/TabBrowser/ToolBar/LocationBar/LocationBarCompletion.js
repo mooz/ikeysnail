@@ -29,14 +29,25 @@ class LocationBarCompletion extends Component {
         this._locationBar = val;
     }
 
+    get suggestionIndex() {
+        return this.state.suggestionIndex;
+    }
+
     get suggestionSelected() {
         return this.state.suggestionIndex >= 0;
     }
 
-    set suggestions(suggestionList) {
+    set suggestions(val) {
+        this.setSuggestions(val);
+    }
+
+    setSuggestions(suggestionList, index=-1) {
+        if (suggestionList && index >= 0) {
+          index = Math.min(index, suggestionList.length - 1);
+        }
         this.setState({
             suggestionList: suggestionList,
-            suggestionIndex: -1
+            suggestionIndex: index
         })
     }
 
@@ -429,6 +440,12 @@ class SuggestionScrapbox extends Suggestion {
             `https://scrapbox.io/api/pages/${userName}/search/query?skip=0&sort=updated&limit=30&q=` +
             encodeURIComponent(query);
         return new Promise((resolve, reject) => {
+            /*
+            if (query.length <= 2) {
+                return resolve(null);
+            }
+            */
+
             $http.request({
                 method: "GET",
                 url: completionURL,
