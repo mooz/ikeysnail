@@ -100,8 +100,8 @@ class LocationBar extends Component {
                         });
                     });
                 }
-            }
-            const obtainSuggestionsDebounce = debounce(obtainSuggestions, 200);
+            };
+            const obtainSuggestionsDebounce = debounce(obtainSuggestions, 100);
             
             return {
                 type: "input",
