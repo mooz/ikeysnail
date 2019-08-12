@@ -27,15 +27,17 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
 	  mode: 'development',
-    target: 'web',
-	  entry: './src/main.js',
-
+    target: 'node',
+	  entry: {
+		  "main": './src/main.js',
+		  "content-script": './src/content-script.js'
+	  },
 	  output: {
 		    filename: '[name].js',
 		    path: path.resolve(__dirname, 'package')
 	  },
 
-	  plugins: [new webpack.ProgressPlugin(), new HtmlWebpackPlugin()],
+	  plugins: [new webpack.ProgressPlugin()],
 
     resolve: {
         modules: ["./src"],

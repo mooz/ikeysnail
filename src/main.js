@@ -76,7 +76,7 @@ function saveHistory(browser) {
 // ----------------------------------------------------------- //
 
 function loadConfig() {
-    let userSettings = readMinified("./strings/settings");
+    let userSettings = readMinified("./settings");
     eval(userSettings);
     const config = {sites: []};
     exports.setup(config, {marked: () => null});
@@ -84,8 +84,8 @@ function loadConfig() {
 }
 
 function readUserScript() {
-  let userSettings = readMinified("./strings/settings");
-  let contentScript = readMinified("./strings/content-script");
+  let userSettings = readMinified("./settings");
+  let contentScript = readMinified("./content-script");
   return contentScript.replace(
     "/*@preserve SETTINGS_HERE*/",
       "\n" + userSettings + "\n"
