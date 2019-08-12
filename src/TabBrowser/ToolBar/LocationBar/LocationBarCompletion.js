@@ -440,8 +440,7 @@ class SuggestionScrapbox extends Suggestion {
             `https://scrapbox.io/api/pages/${userName}/search/query?skip=0&sort=updated&limit=30&q=` +
             encodeURIComponent(query);
         return new Promise((resolve, reject) => {
-            /*
-            if (query.length <= 2) {
+            if (!userName) {
                 return resolve(null);
             }
             */

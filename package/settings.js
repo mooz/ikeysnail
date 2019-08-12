@@ -3,6 +3,7 @@ const setup = (config, keysnail, isContent) => {
     config.DEBUG_SHOW_DISPATCH_KEY = false;
     config.DEBUG_SHOW_MESSAGE = false;
 
+    // Tab UI related settings
     config.TAB_HEIGHT = 30;
     config.TAB_VERTICAL = false;
     config.TAB_VERTICAL_WIDTH = 250;
@@ -10,20 +11,28 @@ const setup = (config, keysnail, isContent) => {
     config.SIZE_TAB_FONT = 13;
     config.TOPBAR_HEIGHT = 50;
 
+    // Other UI related settings
+    config.HIDE_STATUSBAR = true;
+    config.HIDE_TOOLBAR = true;
+
+    // Auto key-repeating for alphabets and numbers
     config.KEY_REPEAT_ENABLED = true;
     config.KEY_REPEAT_INTERVAL = 0.03 * 1000;
     config.KEY_REPEAT_INITIAL = 0.2 * 1000;
 
-    config.SCRAPBOX_USER = "stillpedant";
+    // Wether to swap command and option key (useful for non Mac keyboards)
+    config.SWAP_COMMAND_OPTION = false;
 
+    // Wether to capture ctrl-space key
     config.CAPTURE_CTRL_SPACE = true;
-    config.HIDE_STATUSBAR = true;
-    config.HIDE_TOOLBAR = true;
+
+    // Specify your scrapbox account
+    config.SCRAPBOX_USER = null;
+
+    // Misc settings
     config.NEW_PAGE_URL = "https://www.google.com/";
     config.USER_AGENT =
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0 Safari/605.1.15";
-
-    config.SWAP_COMMAND_OPTION = false;
 
     if (!isContent) {
         // Configure order of location bar suggestion
