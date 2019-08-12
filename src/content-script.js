@@ -7,8 +7,32 @@
     }
   }
 
+  // function message(msg, duration) {
+  //   $notify("message", { message: msg, duration: duration });
+  // }
+
+  let messageTimer = null;
   function message(msg, duration) {
-    $notify("message", { message: msg, duration: duration });
+    if (messageTimer) {
+      clearTimeout(messageTimer);
+      messageTimer = null;
+    }
+    const id = "keysnail-message";
+    let messageElement = document.getElementById(id);
+    if (!messageElement) {
+      messageElement = document.createElement("span");
+      messageElement.setAttribute("id", id);
+      document.documentElement.appendChild(messageElement);
+    } else {
+      messageElement.hidden = true;
+    }
+    if (msg) {
+      messageElement.textContent = msg;
+      messageElement.hidden = false;
+      setTimeout(() => {
+        messageElement.hidden = true;
+      }, duration || 3000);
+    }
   }
 
   function createNewTab(url, openInBackground) {
@@ -409,6 +433,7 @@
     let command = getCommand(keyString, subKeyMap ? [subKeyMap] : [keyMap, gLocalKeyMap.all]);
     if (!command) {
       // Not found. Reset.
+      message(null);
       return resetKeyStatus();
     }
 
@@ -423,23 +448,21 @@
 
     if (typeof command === "object") {
       // sub key map
-
-      // message("Keys: { " + Object.keys(command).join(", ") + " }");
+      message(currentKeys.join(",") + " → {" + Object.keys(command).join(",") + "}", 3000);
       subKeyMap = command;
     } else {
+      message(null);
       resetKeyStatus();
-          if (typeof command === "function") {
-            // Exec function
-            command();
-          } else if (typeof command === "string") {
-            keysnail.dispatchKey(command, keepMark);
-          }
-
-          if (!keepMark) {
-            // Reset mark
-            gStatusMarked = false;
-          }
-
+      if (typeof command === "function") {
+        // Exec function
+        command();
+      } else if (typeof command === "string") {
+        keysnail.dispatchKey(command, keepMark);
+      }
+      if (!keepMark) {
+        // Reset mark
+        gStatusMarked = false;
+      }
     }
   };
 
@@ -1149,15 +1172,32 @@
  #keysnail-popup a.selected {
      background-color: rgba(0,0,0,0.15);
  }
+ 
 .keysnail-hint {
         background-color: yellow !important;
         color: black !important;
+        box-sizing: border-box;
         font-family: "menlo" !important;
         font-size: 15px !important;
         padding: 2px !important;
         position: fixed !important;
         opacity: 0.8;
         z-index: ${Z_INDEX_MAX};
+}
+
+#keysnail-message {
+   background-color: black !important;
+   font-weight: bold !important;
+   color: white !important;
+   border-radius: 2px !important;
+   padding: 3px 8px !important;
+   box-sizing: border-box !important;
+   font-family: "menlo" !important;
+   font-size: 18px !important;
+   position: fixed !important;
+   z-index: ${Z_INDEX_MAX} !important;
+   right: 10px !important;
+   top: 10px !important; 
 }
 `);
 
