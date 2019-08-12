@@ -1,7 +1,3 @@
-// const TOPBAR_HEIGHT = 35;
-const VERTICAL_TAB_WIDTH = 300;
-const TAB_HEIGHT = 30;
-
 const {Component} = require("../../Component");
 
 // -------------------------------------------------------------------- //
