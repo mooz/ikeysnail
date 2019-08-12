@@ -10,6 +10,10 @@ const setup = (config, keysnail, isContent) => {
     config.SIZE_TAB_FONT = 13;
     config.TOPBAR_HEIGHT = 50;
 
+    config.KEY_REPEAT_ENABLED = true;
+    config.KEY_REPEAT_INTERVAL = 0.03 * 1000;
+    config.KEY_REPEAT_INITIAL = 0.2 * 1000;
+
     config.SCRAPBOX_USER = "stillpedant";
 
     config.CAPTURE_CTRL_SPACE = true;

@@ -376,17 +376,42 @@
     );
   }
 
-  const currentKeys = [];
-  let subKeyMap = null;
-  function resetKeyStatus() {
-    currentKeys.length = 0;
-    subKeyMap = null;
+  function shouldKeyRepeated(key) {
+    return (keyToKeyCode["a"] <= key.keyCode && key.keyCode <= keyToKeyCode["z"]) ||
+        (keyToKeyCode["A"] <= key.keyCode && key.keyCode <= keyToKeyCode["Z"]) ||
+        (keyToKeyCode["0"] <= key.keyCode && key.keyCode <= keyToKeyCode["9"]);
   }
-  const shortcutKeyHandler = keyEvent => {
-    if (gHitHintDisposerInternal) {
-      // Hit-Hint mode. Ignore.
-      return;
+
+    const currentKeys = [];
+    let subKeyMap = null;
+
+    function resetKeyStatus() {
+        currentKeys.length = 0;
+        subKeyMap = null;
     }
+
+    // Key repeat handler
+    let keyRepeatTimer = null;
+    let keyRepeatThread = null;
+    let keyRepeatString = null;
+
+    const shortcutKeyHandlerKeyUp = keyEvent => {
+        if (!shouldKeyRepeated(keyEvent)) return;
+        let keyString = keyToString(keyEvent);
+        if (keyString === keyRepeatString) {
+            if (keyRepeatTimer) clearTimeout(keyRepeatTimer);
+            if (keyRepeatThread) clearTimeout(keyRepeatThread);
+            keyRepeatString = null;
+            keyRepeatTimer = null;
+            keyRepeatThread = null;
+        }
+    };
+
+    const shortcutKeyHandlerKeyDown = keyEvent => {
+        if (gHitHintDisposerInternal) {
+            // Hit-Hint mode. Ignore.
+            return;
+        }
 
     if (keyEvent.__keysnail__) {
       // Synthetic. Ignore.
@@ -414,9 +439,27 @@
     const keyString = keyToString(keyEvent);
     currentKeys.push(keyString);
 
-    if (config.DEBUG_SHOW_INPUT_KEY) {
-      message("Input: " + currentKeys.join(" -> "));
-    }
+        // Key repeat handler
+        if (config.KEY_REPEAT_ENABLED && shouldKeyRepeated(keyEvent) && keyRepeatString !== keyString) {
+            if (keyRepeatTimer) {
+                clearTimeout(keyRepeatTimer);
+                if (keyRepeatThread) {
+                    clearInterval(keyRepeatThread);
+                    keyRepeatThread = null;
+                }
+            }
+
+            keyRepeatString = keyString;
+            keyRepeatTimer = setTimeout(() => {
+                keyRepeatThread = setInterval(() => {
+                    shortcutKeyHandlerKeyDown(keyEvent);
+                }, config.KEY_REPEAT_INTERVAL);
+            }, config.KEY_REPEAT_INITIAL);
+        }
+
+        if (config.DEBUG_SHOW_INPUT_KEY) {
+            message("Input: " + currentKeys.join(" -> "));
+        }
 
     let keepMark = false;
     let keyMap = gLocalKeyMap[mode];
@@ -555,48 +598,48 @@
       };
     }
 
-    if (document.querySelector(".CodeMirror")) {
-      log("Code mirror Initialized.");
-      initializeCodeMirror();
-    } else if (
-      location.host === "scrapbox.io" &&
-      document.getElementById("text-input")
-    ) {
-      // Scrapbox
-      log("Scrapbox Initialized.");
-      initializeScrapbox();
-    } else if (
-      window._debug_editors &&
-      document.querySelector(".file-tree ul.file-tree-list") &&
-      document.querySelector(".ace_text-input")
-    ) {
-      // Overleaf v2 provides access to ACE editor instance as `window._debug_editors`.
-      // See https://www.overleaf.com/learn/how-to/How_can_I_define_custom_Vim_macros_in_a_vimrc_file_on_Overleaf%3F
-      initializeOverleaf();
-      log("Overleaf initialized");
-    } else if (document.querySelector(".editor__inner")) {
-      gRichTextEditorInputElement = document.querySelector(".editor__inner");
-    } else if (document.querySelector(".docs-texteventtarget-iframe")) {
-      gRichTextEditorInputElement = document.querySelector(
-        ".docs-texteventtarget-iframe"
-      );
-      gGoogleDocsEditor = gRichTextEditorInputElement.contentWindow.document.querySelector(
-        '[contenteditable="true"]'
-      );
-      gGoogleDocsEditor.addEventListener(
-        "keydown",
-        ev => shortcutKeyHandler(ev),
-        true
-      );
-    } else {
-      trialTimes++;
-      if (trialTimes < 10) {
-        setTimeout(() => {
-          initializeRichTextEditor(trialTimes);
-        }, 500);
-      }
+        if (document.querySelector(".CodeMirror")) {
+            log("Code mirror Initialized.");
+            initializeCodeMirror();
+        } else if (
+            location.host === "scrapbox.io" &&
+            document.getElementById("text-input")
+        ) {
+            // Scrapbox
+            log("Scrapbox Initialized.");
+            initializeScrapbox();
+        } else if (
+            window._debug_editors &&
+            document.querySelector(".file-tree ul.file-tree-list") &&
+            document.querySelector(".ace_text-input")
+        ) {
+            // Overleaf v2 provides access to ACE editor instance as `window._debug_editors`.
+            // See https://www.overleaf.com/learn/how-to/How_can_I_define_custom_Vim_macros_in_a_vimrc_file_on_Overleaf%3F
+            initializeOverleaf();
+            log("Overleaf initialized");
+        } else if (document.querySelector(".editor__inner")) {
+            gRichTextEditorInputElement = document.querySelector(".editor__inner");
+        } else if (document.querySelector(".docs-texteventtarget-iframe")) {
+            gRichTextEditorInputElement = document.querySelector(
+                ".docs-texteventtarget-iframe"
+            );
+            gGoogleDocsEditor = gRichTextEditorInputElement.contentWindow.document.querySelector(
+                '[contenteditable="true"]'
+            );
+            gGoogleDocsEditor.addEventListener(
+                "keydown",
+                ev => shortcutKeyHandlerKeyDown(ev),
+                true
+            );
+        } else {
+            trialTimes++;
+            if (trialTimes < 10) {
+                setTimeout(() => {
+                    initializeRichTextEditor(trialTimes);
+                }, 500);
+            }
+        }
     }
-  }
 
   function getKeyEventReceiver() {
     return (
@@ -1083,18 +1126,10 @@
 
   setup(config, keysnail, true);
 
-  initializeRichTextEditor(0);
-  window.addEventListener(
-    "keydown",
-    ev => {
-      try {
-        shortcutKeyHandler(ev);
-      } catch (x) {
-        log("Error in shortcutKeyHandler: " + x);
-      }
-    },
-    true
-  );
+    initializeRichTextEditor(0);
+
+    window.addEventListener("keydown", shortcutKeyHandlerKeyDown, true);
+    window.addEventListener("keyup", shortcutKeyHandlerKeyUp, true);
 
   gLocalKeyMap = {
     all: Object.assign({}, config.globalKeyMap.all),
