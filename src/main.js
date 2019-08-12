@@ -149,7 +149,7 @@ class TabContentHolder extends Component {
                     make.left.equalTo(view.super).offset(this.config.TAB_VERTICAL_WIDTH);
                 } else {
                     make.width.equalTo(view.super.width);
-                    make.height.equalTo(view.super.height);
+                    make.height.equalTo(view.super.height).offset(-this.config.TAB_HEIGHT);
                     make.top.equalTo(view.super.top).offset(this.config.TAB_HEIGHT);
                     make.left.equalTo(view.super);
                }
