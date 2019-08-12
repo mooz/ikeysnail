@@ -46,8 +46,10 @@ class LocationBar extends Component {
             const isURL = urlLike => /https?:\/\//.test(urlLike);
             let browser = this._browser;
             let originalURL = null;
-            
+
+            let latestQuery = null;
             const obtainSuggestions = async (query, sender) => {
+                latestQuery = query;
                 if (query.length < 1) {
                     this._completion.suggestions = null;
                     return;
@@ -87,6 +89,9 @@ class LocationBar extends Component {
                     let allSuggestions = [];                    
                     suggestionTasks.forEach(task => {
                         task.then(completedSuggestions => {
+                            if (latestQuery !== query) {
+                                return;
+                            }
                             if (completedSuggestions) {
                                 allSuggestions = allSuggestions.concat(completedSuggestions.slice(0, NUM_CANDIDATE_MAX));
                             }
@@ -101,7 +106,7 @@ class LocationBar extends Component {
                     });
                 }
             };
-            const obtainSuggestionsDebounce = debounce(obtainSuggestions, 100);
+            const obtainSuggestionsDebounce = debounce(obtainSuggestions, 150);
             
             return {
                 type: "input",
