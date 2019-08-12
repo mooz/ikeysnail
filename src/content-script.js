@@ -378,6 +378,7 @@
   }
 
   function shouldKeyRepeated(key) {
+    if (key.altKey || key.ctrlKey || key.metaKey) return false;
     return (keyToKeyCode["a"] <= key.keyCode && key.keyCode <= keyToKeyCode["z"]) ||
         (keyToKeyCode["A"] <= key.keyCode && key.keyCode <= keyToKeyCode["Z"]) ||
         (keyToKeyCode["0"] <= key.keyCode && key.keyCode <= keyToKeyCode["9"]);
