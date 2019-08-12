@@ -11,8 +11,10 @@ const {TabListVertical} = require("TabBrowser/TabList");
 function readMinified(prefix) {
   if ($file.exists(prefix + ".min.js")) {
     return $file.read(prefix + ".min.js").string;
-  } else {
+  } else if ($file.exists(prefix + ".js")) {
     return $file.read(prefix + ".js").string;
+  } else {
+    return null;
   }
 }
 
@@ -75,21 +77,37 @@ function saveHistory(browser) {
 // User script
 // ----------------------------------------------------------- //
 
+const CONFIG_NAMES = ["settings.default", "settings"];
+
 function loadConfig() {
-    let userSettings = readMinified("./settings");
-    eval(userSettings);
-    const config = {sites: []};
-    exports.setup(config, {marked: () => null});
-    return config;
+  const config = {sites: []};
+  const keysnail = {marked: () => null};
+  const isContent = false;
+
+  for (let fileName of CONFIG_NAMES) {
+    let script = readMinified(fileName);
+    if (script) {
+      eval(script);
+      console.log("Loading " + fileName + " -> done");
+    } else {
+      console.log("Loading " + fileName + " -> skipped (not found)");
+    }
+  }
+  return config;
 }
 
 function readUserScript() {
-  let userSettings = readMinified("./settings");
+  let userSettings = CONFIG_NAMES.map(readMinified).filter(s => !!s).join("\n");
   let contentScript = readMinified("./content-script");
-  return contentScript.replace(
-    "/*@preserve SETTINGS_HERE*/",
-      "\n" + userSettings + "\n"
+  console.log(contentScript);
+  let userScript = contentScript.replace(
+      "/*@preserve SETTINGS_HERE*/",
+      `function setup(config, keysnail, isContent) {
+        ${userSettings}
+      }`
   );
+  console.log(userScript);
+  return userScript;
 }
 
 // ----------------------------------------------------------- //

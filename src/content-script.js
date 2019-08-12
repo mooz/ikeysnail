@@ -1126,7 +1126,8 @@
 
   /*@preserve SETTINGS_HERE*/
 
-  setup(config, keysnail, true);
+    // `setup` is defined through `readUserScript` in main.js
+    setup(config, keysnail, true);
 
     initializeRichTextEditor(0);
 
