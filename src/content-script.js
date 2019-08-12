@@ -402,7 +402,7 @@
         let keyString = keyToString(keyEvent);
         if (keyString === keyRepeatString) {
             if (keyRepeatTimer) clearTimeout(keyRepeatTimer);
-            if (keyRepeatThread) clearTimeout(keyRepeatThread);
+            if (keyRepeatThread) clearInterval(keyRepeatThread);
             keyRepeatString = null;
             keyRepeatTimer = null;
             keyRepeatThread = null;
