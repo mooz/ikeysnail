@@ -7,33 +7,34 @@
     }
   }
 
-  // function message(msg, duration) {
-  //   $notify("message", { message: msg, duration: duration });
-  // }
+    function message(msg, duration) {
+        $notify("message", {message: msg, duration: duration});
+    }
 
-  let messageTimer = null;
-  function message(msg, duration) {
-    if (messageTimer) {
-      clearTimeout(messageTimer);
-      messageTimer = null;
+    let messageTimer = null;
+
+    function messageSmall(msg, duration) {
+        if (messageTimer) {
+            clearTimeout(messageTimer);
+            messageTimer = null;
+        }
+        const id = "keysnail-message";
+        let messageElement = document.getElementById(id);
+        if (!messageElement) {
+            messageElement = document.createElement("span");
+            messageElement.setAttribute("id", id);
+            document.documentElement.appendChild(messageElement);
+        } else {
+            messageElement.hidden = true;
+        }
+        if (msg) {
+            messageElement.textContent = msg;
+            messageElement.hidden = false;
+            setTimeout(() => {
+                messageElement.hidden = true;
+            }, duration || 3000);
+        }
     }
-    const id = "keysnail-message";
-    let messageElement = document.getElementById(id);
-    if (!messageElement) {
-      messageElement = document.createElement("span");
-      messageElement.setAttribute("id", id);
-      document.documentElement.appendChild(messageElement);
-    } else {
-      messageElement.hidden = true;
-    }
-    if (msg) {
-      messageElement.textContent = msg;
-      messageElement.hidden = false;
-      setTimeout(() => {
-        messageElement.hidden = true;
-      }, duration || 3000);
-    }
-  }
 
   function createNewTab(url, openInBackground) {
     $notify("createNewTab", { url, openInBackground });
@@ -473,12 +474,12 @@
       return null;
     }
 
-    let command = getCommand(keyString, subKeyMap ? [subKeyMap] : [keyMap, gLocalKeyMap.all]);
-    if (!command) {
-      // Not found. Reset.
-      message(null);
-      return resetKeyStatus();
-    }
+        let command = getCommand(keyString, subKeyMap ? [subKeyMap] : [keyMap, gLocalKeyMap.all]);
+        if (!command) {
+            // Not found. Reset.
+            messageSmall(null);
+            return resetKeyStatus();
+        }
 
     keyEvent.stopPropagation();
     keyEvent.preventDefault();
@@ -489,25 +490,25 @@
       command = command.command;
     }
 
-    if (typeof command === "object") {
-      // sub key map
-      message(currentKeys.join(",") + " → {" + Object.keys(command).join(",") + "}", 3000);
-      subKeyMap = command;
-    } else {
-      message(null);
-      resetKeyStatus();
-      if (typeof command === "function") {
-        // Exec function
-        command();
-      } else if (typeof command === "string") {
-        keysnail.dispatchKey(command, keepMark);
-      }
-      if (!keepMark) {
-        // Reset mark
-        gStatusMarked = false;
-      }
-    }
-  };
+        if (typeof command === "object") {
+            // sub key map
+            messageSmall(currentKeys.join(",") + " → {" + Object.keys(command).join(",") + "}", 3000);
+            subKeyMap = command;
+        } else {
+            messageSmall(null);
+            resetKeyStatus();
+            if (typeof command === "function") {
+                // Exec function
+                command.call(keysnail);
+            } else if (typeof command === "string") {
+                keysnail.dispatchKey(command, keepMark);
+            }
+            if (!keepMark) {
+                // Reset mark
+                gStatusMarked = false;
+            }
+        }
+    };
 
   function setupInCompositionHandler(editorElement, dispatcher) {
     // Ctr+h should be handled separately.
