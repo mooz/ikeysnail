@@ -645,6 +645,14 @@ function startSession(urlToVisit) {
           browser.selectedTab.dispatchCtrlSpace();
       }
 
+      // Key repeat handler
+      let keyRepeatTimer = null;
+      let keyRepeatThread = null;
+      let keyRepeatString = null;
+
+      //   console.log("keyup: " + keyString + "  " + Date.now());
+      // };
+      //
       // Workaround for capturing Ctrl-Space
       $define({
         // type: "WKWebView",
@@ -679,22 +687,54 @@ function startSession(urlToVisit) {
               if (ctrlKey) completeKeyString = "ctrl-" + completeKeyString;
               if (optionKey) completeKeyString = "alt-" + completeKeyString;
 
-              if (commands.hasOwnProperty(completeKeyString)) {
-                if (
-                  completeKeyString === "ctrl-m" &&
-                  inputElement.$markedTextRange()
-                ) {
-                  // TODO: doesn't work
-                  return self.$ORIG__handleKeyUIEvent(evt);
-                }
+              function handleKeyDown(completeKeyString, commands) {
+                  if (keyRepeatString !== completeKeyString) {
+                    if (keyRepeatTimer) {
+                      clearTimeout(keyRepeatTimer);
+                      if (keyRepeatThread) {
+                        clearInterval(keyRepeatThread);
+                        keyRepeatThread = null;
+                      }
+                    }
+                    keyRepeatString = completeKeyString;
+                    keyRepeatTimer = setTimeout(() => {
+                      keyRepeatThread = setInterval(() => {
+                        commands[completeKeyString]();
+                      }, config.KEY_REPEAT_INTERVAL);
+                    }, config.KEY_REPEAT_INITIAL);
+                  }
 
+                commands[completeKeyString]();
+              }
+
+              function handleKeyUp(completeKeyString) {
+                if (completeKeyString === keyRepeatString) {
+                  if (keyRepeatTimer) clearTimeout(keyRepeatTimer);
+                  if (keyRepeatThread) clearInterval(keyRepeatThread);
+                  keyRepeatString = null;
+                  keyRepeatTimer = null;
+                  keyRepeatThread = null;
+                }
+              }
+
+              // Decide keymap
+              let commands = defaultCommands;
+              if (inputElement.$isFirstResponder()) {
+                commands = urlBarCommands;
+              }
+
+              if (commands.hasOwnProperty(completeKeyString)) {
                 if (pressed) {
-                  // $ui.toast("Exec command for " + completeKeyString);
-                  try {
-                    commands[completeKeyString]();
-                  } catch (x) {}
+                  handleKeyDown(completeKeyString, commands);
+                } else {
+                  handleKeyUp(completeKeyString);
                 }
                 return null;
+              } else {
+                // If key is pressed
+                if (!pressed) {
+                  handleKeyUp(completeKeyString);
+                }
               }
             }
             return self.$ORIG__handleKeyUIEvent(evt);
