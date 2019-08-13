@@ -397,17 +397,26 @@
     let keyRepeatThread = null;
     let keyRepeatString = null;
 
+
+    function quitKeyRepeat() {
+        if (keyRepeatTimer) clearTimeout(keyRepeatTimer);
+        if (keyRepeatThread) clearInterval(keyRepeatThread);
+        keyRepeatString = null;
+        keyRepeatTimer = null;
+        keyRepeatThread = null;
+    }
+
     const shortcutKeyHandlerKeyUp = keyEvent => {
         if (!shouldKeyRepeated(keyEvent)) return;
         let keyString = keyToString(keyEvent);
         if (keyString === keyRepeatString) {
-            if (keyRepeatTimer) clearTimeout(keyRepeatTimer);
-            if (keyRepeatThread) clearInterval(keyRepeatThread);
-            keyRepeatString = null;
-            keyRepeatTimer = null;
-            keyRepeatThread = null;
+            quitKeyRepeat();
         }
     };
+
+    window.addEventListener("blur", () => {
+        quitKeyRepeat();
+    }, true);
 
     const shortcutKeyHandlerKeyDown = keyEvent => {
         if (gHitHintDisposerInternal) {
