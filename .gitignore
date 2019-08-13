@@ -19,3 +19,6 @@ last-url.txt
 
 node_modules/
 .idea/
+
+package/main.js
+package/content-script.js
