@@ -22,3 +22,6 @@ node_modules/
 
 package/main.js
 package/content-script.js
+
+package-lock.json
+package/.output
