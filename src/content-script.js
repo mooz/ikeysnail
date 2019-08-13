@@ -423,45 +423,48 @@
     );
   }
 
-    const currentKeys = [];
-    let subKeyMap = null;
+  const currentKeys = [];
+  let subKeyMap = null;
 
-    function resetKeyStatus() {
-        currentKeys.length = 0;
-        subKeyMap = null;
+  function resetKeyStatus() {
+    currentKeys.length = 0;
+    subKeyMap = null;
+  }
+
+  // Key repeat handler
+  let keyRepeatTimer = null;
+  let keyRepeatThread = null;
+  let keyRepeatString = null;
+
+  function quitKeyRepeat() {
+    if (keyRepeatTimer) clearTimeout(keyRepeatTimer);
+    if (keyRepeatThread) clearInterval(keyRepeatThread);
+    keyRepeatString = null;
+    keyRepeatTimer = null;
+    keyRepeatThread = null;
+  }
+
+  const shortcutKeyHandlerKeyUp = keyEvent => {
+    if (!shouldKeyRepeated(keyEvent)) return;
+    let keyString = keyToString(keyEvent);
+    if (keyString === keyRepeatString) {
+      quitKeyRepeat();
     }
+  };
 
-    // Key repeat handler
-    let keyRepeatTimer = null;
-    let keyRepeatThread = null;
-    let keyRepeatString = null;
+  window.addEventListener(
+    "blur",
+    () => {
+      quitKeyRepeat();
+    },
+    true
+  );
 
-
-    function quitKeyRepeat() {
-        if (keyRepeatTimer) clearTimeout(keyRepeatTimer);
-        if (keyRepeatThread) clearInterval(keyRepeatThread);
-        keyRepeatString = null;
-        keyRepeatTimer = null;
-        keyRepeatThread = null;
+  const shortcutKeyHandlerKeyDown = keyEvent => {
+    if (gHitHintDisposerInternal) {
+      // Hit-Hint mode. Ignore.
+      return;
     }
-
-    const shortcutKeyHandlerKeyUp = keyEvent => {
-        if (!shouldKeyRepeated(keyEvent)) return;
-        let keyString = keyToString(keyEvent);
-        if (keyString === keyRepeatString) {
-            quitKeyRepeat();
-        }
-    };
-
-    window.addEventListener("blur", () => {
-        quitKeyRepeat();
-    }, true);
-
-    const shortcutKeyHandlerKeyDown = keyEvent => {
-        if (gHitHintDisposerInternal) {
-            // Hit-Hint mode. Ignore.
-            return;
-        }
 
     if (keyEvent.__keysnail__) {
       // Synthetic. Ignore.
@@ -489,27 +492,31 @@
     const keyString = keyToString(keyEvent);
     currentKeys.push(keyString);
 
-        // Key repeat handler
-        if (config.KEY_REPEAT_ENABLED && shouldKeyRepeated(keyEvent) && keyRepeatString !== keyString) {
-            if (keyRepeatTimer) {
-                clearTimeout(keyRepeatTimer);
-                if (keyRepeatThread) {
-                    clearInterval(keyRepeatThread);
-                    keyRepeatThread = null;
-                }
-            }
-
-            keyRepeatString = keyString;
-            keyRepeatTimer = setTimeout(() => {
-                keyRepeatThread = setInterval(() => {
-                    shortcutKeyHandlerKeyDown(keyEvent);
-                }, config.KEY_REPEAT_INTERVAL);
-            }, config.KEY_REPEAT_INITIAL);
+    // Key repeat handler
+    if (
+      config.KEY_REPEAT_ENABLED &&
+      shouldKeyRepeated(keyEvent) &&
+      keyRepeatString !== keyString
+    ) {
+      if (keyRepeatTimer) {
+        clearTimeout(keyRepeatTimer);
+        if (keyRepeatThread) {
+          clearInterval(keyRepeatThread);
+          keyRepeatThread = null;
         }
+      }
 
-        if (config.DEBUG_SHOW_INPUT_KEY) {
-            message("Input: " + currentKeys.join(" -> "));
-        }
+      keyRepeatString = keyString;
+      keyRepeatTimer = setTimeout(() => {
+        keyRepeatThread = setInterval(() => {
+          shortcutKeyHandlerKeyDown(keyEvent);
+        }, config.KEY_REPEAT_INTERVAL);
+      }, config.KEY_REPEAT_INITIAL);
+    }
+
+    if (config.DEBUG_SHOW_INPUT_KEY) {
+      message("Input: " + currentKeys.join(" -> "));
+    }
 
     let keepMark = false;
     let keyMap = gLocalKeyMap[mode];
@@ -523,12 +530,15 @@
       return null;
     }
 
-        let command = getCommand(keyString, subKeyMap ? [subKeyMap] : [keyMap, gLocalKeyMap.all]);
-        if (!command) {
-            // Not found. Reset.
-            messageSmall(null);
-            return resetKeyStatus();
-        }
+    let command = getCommand(
+      keyString,
+      subKeyMap ? [subKeyMap] : [keyMap, gLocalKeyMap.all]
+    );
+    if (!command) {
+      // Not found. Reset.
+      messageSmall(null);
+      return resetKeyStatus();
+    }
 
     keyEvent.stopPropagation();
     keyEvent.preventDefault();
@@ -539,25 +549,28 @@
       command = command.command;
     }
 
-        if (typeof command === "object") {
-            // sub key map
-            messageSmall(currentKeys.join(",") + " → {" + Object.keys(command).join(",") + "}", 3000);
-            subKeyMap = command;
-        } else {
-            messageSmall(null);
-            resetKeyStatus();
-            if (typeof command === "function") {
-                // Exec function
-                command.call(keysnail);
-            } else if (typeof command === "string") {
-                keysnail.dispatchKey(command, keepMark);
-            }
-            if (!keepMark) {
-                // Reset mark
-                gStatusMarked = false;
-            }
-        }
-    };
+    if (typeof command === "object") {
+      // sub key map
+      messageSmall(
+        currentKeys.join(",") + " → {" + Object.keys(command).join(",") + "}",
+        3000
+      );
+      subKeyMap = command;
+    } else {
+      messageSmall(null);
+      resetKeyStatus();
+      if (typeof command === "function") {
+        // Exec function
+        command.call(keysnail);
+      } else if (typeof command === "string") {
+        keysnail.dispatchKey(command, keepMark);
+      }
+      if (!keepMark) {
+        // Reset mark
+        gStatusMarked = false;
+      }
+    }
+  };
 
   function setupInCompositionHandler(editorElement, dispatcher) {
     // Ctr+h should be handled separately.
@@ -648,48 +661,48 @@
       };
     }
 
-        if (document.querySelector(".CodeMirror")) {
-            log("Code mirror Initialized.");
-            initializeCodeMirror();
-        } else if (
-            location.host === "scrapbox.io" &&
-            document.getElementById("text-input")
-        ) {
-            // Scrapbox
-            log("Scrapbox Initialized.");
-            initializeScrapbox();
-        } else if (
-            window._debug_editors &&
-            document.querySelector(".file-tree ul.file-tree-list") &&
-            document.querySelector(".ace_text-input")
-        ) {
-            // Overleaf v2 provides access to ACE editor instance as `window._debug_editors`.
-            // See https://www.overleaf.com/learn/how-to/How_can_I_define_custom_Vim_macros_in_a_vimrc_file_on_Overleaf%3F
-            initializeOverleaf();
-            log("Overleaf initialized");
-        } else if (document.querySelector(".editor__inner")) {
-            gRichTextEditorInputElement = document.querySelector(".editor__inner");
-        } else if (document.querySelector(".docs-texteventtarget-iframe")) {
-            gRichTextEditorInputElement = document.querySelector(
-                ".docs-texteventtarget-iframe"
-            );
-            gGoogleDocsEditor = gRichTextEditorInputElement.contentWindow.document.querySelector(
-                '[contenteditable="true"]'
-            );
-            gGoogleDocsEditor.addEventListener(
-                "keydown",
-                ev => shortcutKeyHandlerKeyDown(ev),
-                true
-            );
-        } else {
-            trialTimes++;
-            if (trialTimes < 10) {
-                setTimeout(() => {
-                    initializeRichTextEditor(trialTimes);
-                }, 500);
-            }
-        }
+    if (document.querySelector(".CodeMirror")) {
+      log("Code mirror Initialized.");
+      initializeCodeMirror();
+    } else if (
+      location.host === "scrapbox.io" &&
+      document.getElementById("text-input")
+    ) {
+      // Scrapbox
+      log("Scrapbox Initialized.");
+      initializeScrapbox();
+    } else if (
+      window._debug_editors &&
+      document.querySelector(".file-tree ul.file-tree-list") &&
+      document.querySelector(".ace_text-input")
+    ) {
+      // Overleaf v2 provides access to ACE editor instance as `window._debug_editors`.
+      // See https://www.overleaf.com/learn/how-to/How_can_I_define_custom_Vim_macros_in_a_vimrc_file_on_Overleaf%3F
+      initializeOverleaf();
+      log("Overleaf initialized");
+    } else if (document.querySelector(".editor__inner")) {
+      gRichTextEditorInputElement = document.querySelector(".editor__inner");
+    } else if (document.querySelector(".docs-texteventtarget-iframe")) {
+      gRichTextEditorInputElement = document.querySelector(
+        ".docs-texteventtarget-iframe"
+      );
+      gGoogleDocsEditor = gRichTextEditorInputElement.contentWindow.document.querySelector(
+        '[contenteditable="true"]'
+      );
+      gGoogleDocsEditor.addEventListener(
+        "keydown",
+        ev => shortcutKeyHandlerKeyDown(ev),
+        true
+      );
+    } else {
+      trialTimes++;
+      if (trialTimes < 10) {
+        setTimeout(() => {
+          initializeRichTextEditor(trialTimes);
+        }, 500);
+      }
     }
+  }
 
   function getKeyEventReceiver() {
     return (
@@ -928,6 +941,7 @@
   }
 
   let gPanel = null;
+
   function getPanel() {
     if (!gPanel) {
       gPanel = new Panel();
@@ -935,63 +949,61 @@
     return gPanel;
   }
 
-    var keysnail = {
-        setMark: function () {
-            message("Set mark.");
-            gStatusMarked = true;
-        },
-        launchDebugConsole: () => {
-            const id = "FirebugLite";
-            if (document.getElementById(id)) {
-                console.log(window.FBL);
-                return;
-            }
-            let E = document.createElement("script");
-            E.setAttribute("id", id);
-            E.src = "https://cdnjs.cloudflare.com/ajax/libs/firebug-lite/1.4.0/firebug-lite.min.js#startOpened=true,disableWhenFirebugActive=false";
-            E.setAttribute("FirebugLite", 4);
-            document.body.appendChild(E);
-        },
-        dispatchKey: (keyString, keepMark, fakeOriginal) => {
-            let eventInfo = parseKeyString(keyString);
-            keysnail.dispatchKeydown(
-                eventInfo.key,
-                eventInfo.withShift,
-                eventInfo.withCtrl,
-                eventInfo.withAlt,
-                eventInfo.withMeta,
-                keepMark,
-                fakeOriginal
-            );
-        },
-        dispatchKeydown: function (
-            key,
-            withShift = false,
-            withCtrl = false,
-            withAlt = false,
-            withCommand = false,
-            keepMark = false,
-            fakeOriginal = false
-        ) {
-            // https://developer.mozilla.org/ja/docs/Web/API/KeyboardEvent/key/Key_Values
-            const eventArgs = {
-                key: key,
-                bubbles: true,
-                cancelable: true,
-                shiftKey: keepMark && gStatusMarked ? true : withShift,
-                ctrlKey: withCtrl,
-                altKey: withAlt,
-                metaKey: withCommand
-            };
-            if (keyToKeyCode.hasOwnProperty(key)) {
-                eventArgs.keyCode = keyToKeyCode[key];
-            }
-            let ev = new KeyboardEvent("keydown", eventArgs);
-            if (!fakeOriginal) {
-                // mark so that our shortcut key handler receive the remapped code
-                ev.__keysnail__ = true;
-            }
-            ev.__keepMark__ = keepMark;
+  var keysnail = {
+    setMark: function() {
+      message("Set mark.");
+      gStatusMarked = true;
+    },
+    launchDebugConsole: async () => {
+      const id = "FirebugLite";
+      if (document.getElementById(id)) {
+        console.log(window.FBL);
+        return;
+      }
+      await loadScript(
+        "https://cdnjs.cloudflare.com/ajax/libs/firebug-lite/1.4.0/firebug-lite.min.js#startOpened=true,disableWhenFirebugActive=false"
+      );
+    },
+    dispatchKey: (keyString, keepMark, fakeOriginal) => {
+      let eventInfo = parseKeyString(keyString);
+      keysnail.dispatchKeydown(
+        eventInfo.key,
+        eventInfo.withShift,
+        eventInfo.withCtrl,
+        eventInfo.withAlt,
+        eventInfo.withMeta,
+        keepMark,
+        fakeOriginal
+      );
+    },
+    dispatchKeydown: function(
+      key,
+      withShift = false,
+      withCtrl = false,
+      withAlt = false,
+      withCommand = false,
+      keepMark = false,
+      fakeOriginal = false
+    ) {
+      // https://developer.mozilla.org/ja/docs/Web/API/KeyboardEvent/key/Key_Values
+      const eventArgs = {
+        key: key,
+        bubbles: true,
+        cancelable: true,
+        shiftKey: keepMark && gStatusMarked ? true : withShift,
+        ctrlKey: withCtrl,
+        altKey: withAlt,
+        metaKey: withCommand
+      };
+      if (keyToKeyCode.hasOwnProperty(key)) {
+        eventArgs.keyCode = keyToKeyCode[key];
+      }
+      let ev = new KeyboardEvent("keydown", eventArgs);
+      if (!fakeOriginal) {
+        // mark so that our shortcut key handler receive the remapped code
+        ev.__keysnail__ = true;
+      }
+      ev.__keepMark__ = keepMark;
 
       if (config.DEBUG_SHOW_DISPATCH_KEY) {
         message("Dispatch: " + keyToString(ev));
