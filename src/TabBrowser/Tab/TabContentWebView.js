@@ -78,6 +78,16 @@ class TabContentWebView extends Component {
                     this.browser.focusLocationBar();
                 }
             },
+            loadScript: ({src, encoding}) => {
+                $http.request({
+                    method: "GET",
+                    url: src,
+                    handler: async (resp) => {
+                        await evalScript(tab, resp.data);
+                        await evalScript(tab, `__keysnail__.notifyScriptLoaded('${src}')`);
+                    }
+                });
+            },
             selectNextTab: () => {
                 this.browser.selectNextTab();
             },

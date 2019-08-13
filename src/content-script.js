@@ -65,6 +65,25 @@
   let gStatusMarked = false;
   let gHitHintDisposerInternal = null;
 
+  let scriptLoadedHandlers = {};
+  function loadScript(src, charset = "UTF-8") {
+    if (scriptLoadedHandlers.hasOwnProperty(src)) {
+      // Already loaded or requested.
+      return new Promise((resolve, reject) => {
+        resolve(false);
+      });
+    }
+
+    // Since injecting custom <script> tag doesn't work on websites
+    // that prohibits external scripts via CSP, we take a hacky-way based on $notify.
+    return new Promise((resolve, reject) => {
+      keysnail.setScriptLoadedCallback(src, () => {
+        resolve(true);
+      });
+      $notify("loadScript", { src, charset });
+    });
+  }
+
   function insertStyle(style) {
     let styleElement = document.createElement("style");
     document.head.appendChild(styleElement);
@@ -1118,6 +1137,14 @@
       panel.run(candidates, options);
     },
     marked: command => ({ command: command, marked: true })
+    setScriptLoadedCallback: (src, callback) => {
+      scriptLoadedHandlers[src] = callback;
+    },
+    notifyScriptLoaded: src => {
+      if (scriptLoadedHandlers.hasOwnProperty(src)) {
+        scriptLoadedHandlers[src]();
+      }
+    }
   };
 
   /*@preserve SETTINGS_HERE*/
