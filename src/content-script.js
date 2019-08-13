@@ -1168,7 +1168,162 @@
       let panel = getPanel();
       panel.run(candidates, options);
     },
-    marked: command => ({ command: command, marked: true })
+    marked: command => ({ command: command, marked: true }),
+    searchText: async backward => {
+      await loadScript(
+        "https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js"
+      );
+
+      let id = "keysnail-search-bar";
+      let searchBar = document.getElementById(id);
+
+      if (searchBar && searchBar.classList.contains("keysnail-active")) {
+        mouseDownElement(
+          document.querySelector(`#${id} button.${backward ? "prev" : "next"}`)
+        );
+        return;
+      }
+
+      let currentNodeIndex = 0;
+      let results = null;
+
+      function updateSearchResultView() {
+        let counter = document.querySelector(`#${id} span`);
+        counter.textContent = "";
+
+        if (!results || !results.length) return;
+
+        counter.textContent = `${currentNodeIndex + 1} / ${results.length}`;
+
+        if (document.querySelectorAll(".keysnail-search-current")) {
+          Array.from(
+            document.querySelectorAll(".keysnail-search-current")
+          ).forEach(e => e.classList.remove("keysnail-search-current"));
+        }
+
+        let current = results[currentNodeIndex];
+        current.classList.add("keysnail-search-current");
+        current.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+          inline: "center"
+        });
+      }
+
+      function gotoNext() {
+        if (!results || !results.length) return;
+        currentNodeIndex =
+          currentNodeIndex === results.length - 1 ? 0 : currentNodeIndex + 1;
+        updateSearchResultView();
+      }
+
+      function gotoPrevious() {
+        if (!results || !results.length) return;
+        currentNodeIndex =
+          currentNodeIndex === 0 ? results.length - 1 : currentNodeIndex - 1;
+        updateSearchResultView();
+      }
+
+      if (!searchBar) {
+        searchBar = document.createElement("div");
+        searchBar.setAttribute("id", id);
+        let input = document.createElement("input");
+        input.setAttribute("type", "text");
+
+        input.addEventListener(
+          "keydown",
+          ev => {
+            if (ev.code === "Enter") {
+              gotoNext();
+            }
+          },
+          false
+        );
+        input.addEventListener(
+          "input",
+          debounce(ev => {
+            let keyword = ev.target.value;
+            let markInstance = keysnail.markInstance;
+            markInstance.unmark({
+              done: () => {
+                markInstance.mark(keyword, {
+                  done: () => {
+                    results = Array.from(document.querySelectorAll("mark")).map(
+                      e => [e, e.getBoundingClientRect()]
+                    );
+                    results.sort(([a, aPos], [b, bPos]) => {
+                      if (aPos.top < bPos.top) {
+                        return -1;
+                      }
+                      if (aPos.top === bPos.top) {
+                        if (aPos.left < bPos.left) {
+                          return -1;
+                        }
+                      }
+                      return 1;
+                    });
+                    results = results.map(([e, pos]) => e);
+                    // TODO: select result most close to current scrollTop
+                    currentNodeIndex = 0;
+                    updateSearchResultView();
+                  }
+                });
+              }
+            });
+          }, 150),
+          false
+        );
+
+        function finish() {
+          searchBar.classList.remove("keysnail-active");
+          keysnail.markInstance.unmark();
+        }
+
+        input.addEventListener("blur", () => {
+          finish();
+        });
+
+        let finishButton = document.createElement("button");
+        finishButton.textContent = "Done";
+        finishButton.addEventListener("mousedown", ev => {
+          finish();
+        });
+
+        let counter = document.createElement("span");
+        let prevButton = document.createElement("button");
+        prevButton.textContent = "Prev";
+        prevButton.classList.add("prev");
+        prevButton.addEventListener("mousedown", ev => {
+          ev.preventDefault();
+          ev.stopPropagation();
+          gotoPrevious();
+        });
+
+        let nextButton = document.createElement("button");
+        nextButton.textContent = "Next";
+        nextButton.classList.add("next");
+        nextButton.addEventListener("mousedown", ev => {
+          ev.preventDefault();
+          ev.stopPropagation();
+          gotoNext();
+        });
+
+        searchBar.appendChild(finishButton);
+        searchBar.appendChild(input);
+        searchBar.appendChild(counter);
+        searchBar.appendChild(prevButton);
+        searchBar.appendChild(nextButton);
+
+        document.documentElement.appendChild(searchBar);
+      }
+      let counter = document.querySelector(`#${id} span`);
+      counter.textContent = "";
+      keysnail.markInstance = new Mark(document.querySelector("body"));
+      searchBar.classList.add("keysnail-active");
+      let input = document.querySelector(`#${id} input`);
+      input.value = "";
+      input.focus();
+    },
     setScriptLoadedCallback: (src, callback) => {
       scriptLoadedHandlers[src] = callback;
     },
@@ -1291,6 +1446,58 @@
    z-index: ${Z_INDEX_MAX} !important;
    right: 10px !important;
    top: 10px !important; 
+}
+
+#keysnail-search-bar.keysnail-active {
+   display: flex !important;
+}
+
+#keysnail-search-bar {
+   display: none !important;
+   justify-content: center !important;
+   align-items: center !important;   
+   height: 45px !important;   
+   background-color: #D1D3D9 !important;
+   position: fixed !important;
+   z-index: ${Z_INDEX_MAX} !important;
+   width: 100% !important;
+   bottom: 100px !important;   
+}
+
+#keysnail-search-bar button {
+   color: black !important;
+   outline: none !important;
+   background-color: transparent !important;
+   border-width: 0px !important;
+}
+
+#keysnail-search-bar span {
+   position: absolute !important;   
+   color: gray !important;
+   padding-left: 10x !important;
+}
+
+#keysnail-search-bar input {
+   outline: none !important;  
+   min-width: 60% !important;
+   color: black !important;
+   background-color: #C6C8CE !important;
+   border-radius: 10px !important;
+   border: 0px !important;
+   height: 80% !important;     
+}
+
+.keysnail-search-current {
+  background-color: yellow !important;
+  border: 1px solid orange !important;
+  border-radius: 3px !important;
+}
+
+#keysnail-search-bar * {
+   font-weight: normal !important;
+   box-sizing: border-box;
+   font-family: -apple-system !important; 
+   font-size: 15px !important;
 }
 `);
 
