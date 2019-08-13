@@ -1354,7 +1354,7 @@
   insertStyle(`
 #keysnail-popup * {
    box-sizing: border-box;
-   font-family: "menlo" !important;
+   font-family: -apple-system !important;
    font-size: 15px !important;
 }
 #keysnail-popup {
