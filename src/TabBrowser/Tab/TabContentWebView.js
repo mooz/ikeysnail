@@ -87,8 +87,8 @@ class TabContentWebView extends Component {
             undoClosedTab: () => {
                 this.browser.undoClosedTab();
             },
-            focusLocationBar: (args) => {
-                this.browser.focusLocationBar(args ? (args.sources || null) : null);
+            focusLocationBar: () => {
+                this.browser.focusLocationBar();
             },
             copyText: ({text}) => {
                 $clipboard.set({type: "public.plain-text", value: text});
