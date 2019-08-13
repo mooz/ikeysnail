@@ -668,12 +668,6 @@ function startSession(urlToVisit) {
               return self.$ORIG__handleKeyUIEvent(evt);
             }
 
-            // Decide keymap
-            let commands = defaultCommands;
-            if (inputElement.$isFirstResponder()) {
-              commands = urlBarCommands;
-            }
-
             // Exec commands
             if (keyCode === key.ctrl) {
               ctrlKey = pressed;
