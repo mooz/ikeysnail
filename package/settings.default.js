@@ -45,7 +45,11 @@ if (!isContent) {
   config.LOCATIONBAR_SUGGESTIONS_SYNCED = false;
 }
 
-// See
+// --------------------------------------------------------------------------------
+// Keymap
+// --------------------------------------------------------------------------------
+
+// Global Keymap. See for key syntax.
 // https://developer.mozilla.org/ja/docs/Web/API/KeyboardEvent/key/Key_Values
 
 config.globalKeyMap = {
@@ -170,6 +174,39 @@ config.globalKeyMap = {
     q: () => $notify("exitApplication")
   }
 };
+
+// --------------------------------------------------------------------------------
+// Keymap (System-level)
+// --------------------------------------------------------------------------------
+
+config.systemKeyMap = {
+  all: {
+    "ctrl-meta-j": (browser) => browser.selectNextTab(),
+    "ctrl-meta-k": (browser) => browser.selectPreviousTab(),
+    "meta-l": (browser) => browser.focusLocationBar()
+  },
+  findBar: {
+    "ctrl-m": (browser) => browser.decideFindBar(),
+    "ctrl-g": (browser) => browser.blurFindBar(),
+    "ctrl-s": (browser) => browser.focusFindBar(),
+    "ctrl-meta-j": (browser) => browser.selectNextTab(),
+    "ctrl-meta-k": (browser) => browser.selectPreviousTab(),
+    Escape: (browser) => browser.blurFindBar()
+  },
+  urlBar: {
+    "ctrl-p": (browser) => browser.selectLocationBarPreviousCandidate(),
+    "ctrl-n": (browser) => browser.selectLocationBarNextCandidate(),
+    "ctrl-m": (browser) => browser.decideLocationBarCandidate(),
+    "ctrl-g": (browser) => browser.blurLocationBar(),
+    "ctrl-meta-j": (browser) => browser.selectNextTab(),
+    "ctrl-meta-k": (browser) => browser.selectPreviousTab(),
+    Escape: (browser) => browser.blurLocationBar()
+  }
+};
+
+// --------------------------------------------------------------------------------
+// Websites
+// --------------------------------------------------------------------------------
 
 config.sites.push({
   alias: "Google",

@@ -1,3 +1,4 @@
+import { ShortcutKeyDeactivator, SystemKeyHandler } from "./Observer";
 const { TabContentWebView } = require("TabBrowser/Tab/TabContentWebView");
 const { Component } = require("Component");
 const { ToolBar } = require("TabBrowser/ToolBar/ToolBar");
@@ -593,171 +594,17 @@ function startSession(urlToVisit) {
     config
   );
 
+  const shortcutKeyDeactivator = new ShortcutKeyDeactivator();
+  const systemKeyHandler = new SystemKeyHandler(browser, config);
+
   $app.listen({
     ready: () => {
-      $define({
-        type: "UIResponder",
-        events: {
-          "_keyCommandForEvent:": evt => {
-            // Disable all shortcut keys of JSBox (Meta-w)
-            return null;
-          }
-        }
-      });
-
-      function flip(obj) {
-        const ret = {};
-        Object.keys(obj).forEach(key => {
-          ret[obj[key]] = key;
-        });
-        return ret;
-      }
-
-      let ctrlKey = false;
-      let metaKey = false;
-      let optionKey = false;
-
-      let inputElement = browser._locationBar.runtime;
-
-      const key = {
-        option: 226,
-        meta: 227,
-        Escape: 41,
-        Enter: 40,
-        ctrl: 224,
-        " ": 44
-      };
-      for (let i = 0; i < 27; ++i) {
-        key[String.fromCharCode(97 + i)] = 4 + i;
-      }
-      if (config.SWAP_COMMAND_OPTION) {
-        let originalOption = key.option;
-        key.option = key.meta;
-        key.meta = originalOption;
-      }
-      Object.freeze(key);
-      const codeToKey = flip(key);
-
-      let urlBarCommands = {
-        "ctrl-p": () => browser.selectLocationBarPreviousCandidate(),
-        "ctrl-n": () => browser.selectLocationBarNextCandidate(),
-        "ctrl-m": () => browser.decideLocationBarCandidate(),
-        "ctrl-g": () => browser.blurLocationBar(),
-        "ctrl-meta-j": () => browser.selectNextTab(),
-        "ctrl-meta-k": () => browser.selectPreviousTab(),
-        Escape: () => browser.blurLocationBar()
-      };
-
-      let defaultCommands = {
-        "ctrl-meta-j": () => browser.selectNextTab(),
-        "ctrl-meta-k": () => browser.selectPreviousTab(),
-        "meta-l": () => browser.focusLocationBar()
-      };
-
-      if (config.CAPTURE_CTRL_SPACE) {
-        defaultCommands["ctrl- "] = () =>
-          browser.selectedTab.dispatchCtrlSpace();
-      }
-
-      // Key repeat handler
-      let keyRepeatTimer = null;
-      let keyRepeatThread = null;
-      let keyRepeatString = null;
-
-      //   console.log("keyup: " + keyString + "  " + Date.now());
-      // };
-      //
-      // Workaround for capturing Ctrl-Space
-      $define({
-        // type: "WKWebView",
-        type: "UIApplication",
-        events: {
-          // Swizzling handleKeyUIEvent doesn't work. We need to swizzle the private one (_handleXXX).
-          "_handleKeyUIEvent:": evt => {
-            const keyCode = evt.$__keyCode();
-            const pressed = evt.$__isKeyDown();
-            const keyString = codeToKey[keyCode];
-
-            if (!codeToKey.hasOwnProperty(keyCode)) {
-              return self.$ORIG__handleKeyUIEvent(evt);
-            }
-
-            // Exec commands
-            if (keyCode === key.ctrl) {
-              ctrlKey = pressed;
-            } else if (keyCode === key.meta) {
-              metaKey = pressed;
-            } else if (keyCode === key.option) {
-              optionKey = pressed;
-            } else {
-              let completeKeyString = keyString;
-              if (metaKey) completeKeyString = "meta-" + completeKeyString;
-              if (ctrlKey) completeKeyString = "ctrl-" + completeKeyString;
-              if (optionKey) completeKeyString = "alt-" + completeKeyString;
-
-              function handleKeyDown(completeKeyString, commands) {
-                if (keyRepeatString !== completeKeyString) {
-                  if (keyRepeatTimer) {
-                    clearTimeout(keyRepeatTimer);
-                    if (keyRepeatThread) {
-                      clearInterval(keyRepeatThread);
-                      keyRepeatThread = null;
-                    }
-                  }
-                  keyRepeatString = completeKeyString;
-                  keyRepeatTimer = setTimeout(() => {
-                    keyRepeatThread = setInterval(() => {
-                      commands[completeKeyString]();
-                    }, config.KEY_REPEAT_INTERVAL);
-                  }, config.KEY_REPEAT_INITIAL);
-                }
-
-                commands[completeKeyString]();
-              }
-
-              function handleKeyUp(completeKeyString) {
-                if (completeKeyString === keyRepeatString) {
-                  if (keyRepeatTimer) clearTimeout(keyRepeatTimer);
-                  if (keyRepeatThread) clearInterval(keyRepeatThread);
-                  keyRepeatString = null;
-                  keyRepeatTimer = null;
-                  keyRepeatThread = null;
-                }
-              }
-
-              // Decide keymap
-              let commands = defaultCommands;
-              if (inputElement.$isFirstResponder()) {
-                commands = urlBarCommands;
-              }
-
-              if (commands.hasOwnProperty(completeKeyString)) {
-                if (pressed) {
-                  handleKeyDown(completeKeyString, commands);
-                } else {
-                  handleKeyUp(completeKeyString);
-                }
-                return null;
-              } else {
-                // If key is pressed
-                if (!pressed) {
-                  handleKeyUp(completeKeyString);
-                }
-              }
-            }
-            return self.$ORIG__handleKeyUIEvent(evt);
-          }
-        }
-      });
+      shortcutKeyDeactivator.onReady();
+      systemKeyHandler.onReady();
     },
     exit: () => {
-      try {
-        $objc("RedBoxCore").$cleanClass("UIResponder");
-        // $objc("RedBoxCore").$cleanClass("WKWebView");
-        $objc("RedBoxCore").$cleanClass("UIApplication");
-      } catch (x) {
-        console.error(x);
-      }
+      shortcutKeyDeactivator.onExit();
+      systemKeyHandler.onExit();
       saveTabInfo(browser);
       saveHistory(browser);
     }
