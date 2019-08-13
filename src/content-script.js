@@ -1336,13 +1336,13 @@
 
   /*@preserve SETTINGS_HERE*/
 
-    // `setup` is defined through `readUserScript` in main.js
-    setup(config, keysnail, true);
+  // `setup` is defined through `readUserScript` in main.js
+  setup(config, keysnail, true);
 
-    initializeRichTextEditor(0);
+  initializeRichTextEditor(0);
 
-    window.addEventListener("keydown", shortcutKeyHandlerKeyDown, true);
-    window.addEventListener("keyup", shortcutKeyHandlerKeyUp, true);
+  window.addEventListener("keydown", shortcutKeyHandlerKeyDown, true);
+  window.addEventListener("keyup", shortcutKeyHandlerKeyUp, true);
 
   gLocalKeyMap = {
     all: Object.assign({}, config.globalKeyMap.all),
