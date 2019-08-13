@@ -7,38 +7,11 @@
     }
   }
 
-    function message(msg, duration) {
-        $notify("message", {message: msg, duration: duration});
-    }
-
-    let messageTimer = null;
-
-    function messageSmall(msg, duration) {
-        if (messageTimer) {
-            clearTimeout(messageTimer);
-            messageTimer = null;
-        }
-        const id = "keysnail-message";
-        let messageElement = document.getElementById(id);
-        if (!messageElement) {
-            messageElement = document.createElement("span");
-            messageElement.setAttribute("id", id);
-            document.documentElement.appendChild(messageElement);
-        } else {
-            messageElement.hidden = true;
-        }
-        if (msg) {
-            messageElement.textContent = msg;
-            messageElement.hidden = false;
-            setTimeout(() => {
-                messageElement.hidden = true;
-            }, duration || 3000);
-        }
-    }
-
-  function createNewTab(url, openInBackground) {
-    $notify("createNewTab", { url, openInBackground });
+  function message(msg, duration) {
+    $notify("message", { message: msg, duration: duration });
   }
+
+  let messageTimer = null;
 
   function inIframe() {
     try {
@@ -51,6 +24,45 @@
   // Do not load in ifrmae pages
   if (window !== window.parent || inIframe()) {
     return;
+  }
+
+  function messageSmall(msg, duration) {
+    if (messageTimer) {
+      clearTimeout(messageTimer);
+      messageTimer = null;
+    }
+    const id = "keysnail-message";
+    let messageElement = document.getElementById(id);
+    if (!messageElement) {
+      messageElement = document.createElement("span");
+      messageElement.setAttribute("id", id);
+      document.documentElement.appendChild(messageElement);
+    } else {
+      messageElement.hidden = true;
+    }
+    if (msg) {
+      messageElement.textContent = msg;
+      messageElement.hidden = false;
+      setTimeout(() => {
+        messageElement.hidden = true;
+      }, duration || 3000);
+    }
+  }
+
+  function createNewTab(url, openInBackground) {
+    $notify("createNewTab", { url, openInBackground });
+  }
+
+  function debounce(func, interval = 500) {
+    let timer = null;
+    return (...args) => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+      timer = setTimeout(async () => {
+        func(...args);
+      }, interval);
+    };
   }
 
   $notify("titleDetermined", { title: document.title });
