@@ -225,7 +225,7 @@ class LocationBarCompletion extends Component {
                 rowHeight: this.CANDIDATE_HEIGHT,
                 template: template,
                 data: data,
-                bgColor: COLOR_CANDIDATE_BG,
+                bgcolor: COLOR_CANDIDATE_BG,
                 borderWidth: 1,
                 radius: 5,
                 borderColor: COLOR_CANDIDATE_BORDER,
@@ -443,7 +443,6 @@ class SuggestionScrapbox extends Suggestion {
             if (!userName) {
                 return resolve(null);
             }
-            */
 
             $http.request({
                 method: "GET",
