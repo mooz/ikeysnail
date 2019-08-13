@@ -887,76 +887,63 @@
     return gPanel;
   }
 
-  var keysnail = {
-    setMark: function() {
-      message("Set mark.");
-      gStatusMarked = true;
-    },
-    launchDebugConsole: () => {
-      // Firebug lite bookmarklet
-      (function(F, i, r, e, b, u, g, L, I, T, E) {
-        if (F.getElementById(b)) return;
-        E = F[i + "NS"] && F.documentElement.namespaceURI;
-        E = E ? F[i + "NS"](E, "script") : F[i]("script");
-        E[r]("id", b);
-        E[r]("src", I + g + T);
-        E[r](b, u);
-        (F[e]("head")[0] || F[e]("body")[0]).appendChild(E);
-        E = new Image();
-        E[r]("src", I + L);
-      })(
-        document,
-        "createElement",
-        "setAttribute",
-        "getElementsByTagName",
-        "FirebugLite",
-        "4",
-        "firebug-lite.js",
-        "releases/lite/latest/skin/xp/sprite.png",
-        "https://getfirebug.com/",
-        "#startOpened"
-      );
-    },
-    dispatchKey: (keyString, keepMark, fakeOriginal) => {
-      let eventInfo = parseKeyString(keyString);
-      keysnail.dispatchKeydown(
-        eventInfo.key,
-        eventInfo.withShift,
-        eventInfo.withCtrl,
-        eventInfo.withAlt,
-        eventInfo.withMeta,
-        keepMark,
-        fakeOriginal
-      );
-    },
-    dispatchKeydown: function(
-      key,
-      withShift = false,
-      withCtrl = false,
-      withAlt = false,
-      withCommand = false,
-      keepMark = false,
-      fakeOriginal = false
-    ) {
-      // https://developer.mozilla.org/ja/docs/Web/API/KeyboardEvent/key/Key_Values
-      const eventArgs = {
-        key: key,
-        bubbles: true,
-        cancelable: true,
-        shiftKey: keepMark && gStatusMarked ? true : withShift,
-        ctrlKey: withCtrl,
-        altKey: withAlt,
-        metaKey: withCommand
-      };
-      if (keyToKeyCode.hasOwnProperty(key)) {
-        eventArgs.keyCode = keyToKeyCode[key];
-      }
-      let ev = new KeyboardEvent("keydown", eventArgs);
-      if (!fakeOriginal) {
-        // mark so that our shortcut key handler receive the remapped code
-        ev.__keysnail__ = true;
-      }
-      ev.__keepMark__ = keepMark;
+    var keysnail = {
+        setMark: function () {
+            message("Set mark.");
+            gStatusMarked = true;
+        },
+        launchDebugConsole: () => {
+            const id = "FirebugLite";
+            if (document.getElementById(id)) {
+                console.log(window.FBL);
+                return;
+            }
+            let E = document.createElement("script");
+            E.setAttribute("id", id);
+            E.src = "https://cdnjs.cloudflare.com/ajax/libs/firebug-lite/1.4.0/firebug-lite.min.js#startOpened=true,disableWhenFirebugActive=false";
+            E.setAttribute("FirebugLite", 4);
+            document.body.appendChild(E);
+        },
+        dispatchKey: (keyString, keepMark, fakeOriginal) => {
+            let eventInfo = parseKeyString(keyString);
+            keysnail.dispatchKeydown(
+                eventInfo.key,
+                eventInfo.withShift,
+                eventInfo.withCtrl,
+                eventInfo.withAlt,
+                eventInfo.withMeta,
+                keepMark,
+                fakeOriginal
+            );
+        },
+        dispatchKeydown: function (
+            key,
+            withShift = false,
+            withCtrl = false,
+            withAlt = false,
+            withCommand = false,
+            keepMark = false,
+            fakeOriginal = false
+        ) {
+            // https://developer.mozilla.org/ja/docs/Web/API/KeyboardEvent/key/Key_Values
+            const eventArgs = {
+                key: key,
+                bubbles: true,
+                cancelable: true,
+                shiftKey: keepMark && gStatusMarked ? true : withShift,
+                ctrlKey: withCtrl,
+                altKey: withAlt,
+                metaKey: withCommand
+            };
+            if (keyToKeyCode.hasOwnProperty(key)) {
+                eventArgs.keyCode = keyToKeyCode[key];
+            }
+            let ev = new KeyboardEvent("keydown", eventArgs);
+            if (!fakeOriginal) {
+                // mark so that our shortcut key handler receive the remapped code
+                ev.__keysnail__ = true;
+            }
+            ev.__keepMark__ = keepMark;
 
       if (config.DEBUG_SHOW_DISPATCH_KEY) {
         message("Dispatch: " + keyToString(ev));
