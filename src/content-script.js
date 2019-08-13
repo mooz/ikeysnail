@@ -102,6 +102,12 @@
     styleElement.textContent = style;
   }
 
+  function mouseDownElement(selectedElm) {
+    let ev = document.createEvent("HTMLEvents");
+    ev.initEvent("mousedown", true, false);
+    selectedElm.dispatchEvent(ev);
+  }
+
   function clickElement(selectedElm) {
     let ev = document.createEvent("HTMLEvents");
     ev.initEvent("click", true, false);
