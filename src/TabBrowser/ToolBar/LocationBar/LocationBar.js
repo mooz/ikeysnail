@@ -26,20 +26,49 @@ class LocationBar extends Component {
             this.WIDTH_RATIO = WIDTH_RATIO;
             this.HEIGHT_RATIO = HEIGHT_RATIO;
         }
-        
-        focus() {
+
+        get suggestionSources() {
+            if (this._currentSuggestionSources) {
+                return this._currentSuggestionSources;
+            }
+            return this._browser.config.LOCATIONBAR_SUGGESTIONS;
+        }
+
+        set suggestionSources(val) {
+            this._currentSuggestionSources = val;
+            // TODO: Change this appropriately!
+            this.suggestionInfoElement.text = val[0].toString().slice(4);
+        }
+
+        finishSuggestionSession() {
+            this._currentSuggestionSources = null;
+        }
+
+        // startSession(sources) {
+        //     this.suggestionSources = sources;
+        //     this.focus();
+        // }
+
+        focus(sources) {
+            this.suggestionSources = sources || null;
             this.element.focus();
             this.runtime.$selectAll();
             this._completion.reset();
         }
         
         blur() {
+            this.finishSuggestionSession();
             this.element.blur();
             this._browser.focusContent();
         }
         
         setURLText(url) {
             this.element.text = decodeURIComponent(url);
+        }
+
+        get suggestionInfoElement() {
+            // TODO: Use relative path
+            return $("location-bar-hint");
         }
         
         build() {
@@ -58,14 +87,7 @@ class LocationBar extends Component {
                     return;
                 }
                 const NUM_CANDIDATE_MAX = 5;
-                const suggestionList = this._browser.config.LOCATIONBAR_SUGGESTIONS;
-                // config.LOCATIONBAR_SUGGESTIONS = [
-                //       "SuggestionTab",
-                //       "SuggestionBookmark",
-                //       "SuggestionHistory",
-                //       "SuggestionWebQuery",
-                //   ];
-                const suggestionTasks = suggestionList.map(suggestionClass => {
+                const suggestionTasks = this.suggestionSources.map(suggestionClass => {
                     if (typeof suggestionClass === "string") {
                         const CompletionModule = require("./LocationBarCompletion");
                         suggestionClass = CompletionModule[suggestionClass];
@@ -107,8 +129,8 @@ class LocationBar extends Component {
                 }
             };
             const obtainSuggestionsDebounce = debounce(obtainSuggestions, 150);
-            
-            return {
+
+            const locationBar = {
                 type: "input",
                 props: {
                     id: this.id,
@@ -117,9 +139,12 @@ class LocationBar extends Component {
                 },
                 layout: (make, view) => {
                     make.centerY.equalTo(view.super.center);
-                    make.height.equalTo(view.super.height).multipliedBy(this.HEIGHT_RATIO);
-                    make.width.equalTo(view.super.width).multipliedBy(this.WIDTH_RATIO);
-                    make.centerX.equalTo(view.super.center).priority(100);
+                    make.height.equalTo(view.super.height);
+                    make.width.equalTo(view.super.width);
+                    // TODO: Okay?
+
+                    make.left.equalTo(view.left.right).offset(5);
+                    // make.centerX.equalTo(view.super.center);
                 },
                 events: {
                     didBeginEditing: sender => {
@@ -146,6 +171,39 @@ class LocationBar extends Component {
                         obtainSuggestionsDebounce(sender.text, sender);
                     }
                 }
+            };
+
+            const locationBarHint = {
+                type: "label",
+                props: {
+                    id: "location-bar-hint",
+                    text: " Google ",
+                    bgcolor: $color("#b1d0ff"),
+                    textColor: $color("#1625ff"),
+                    borderColor: $color("#1625ff"),
+                    borderWidth: 1,
+                    radius: 5,
+                    align: $align.center,
+                },
+                layout: (make, view) => {
+                    make.centerY.equalTo(view.super.center);
+                    make.left.equalTo(view.super.left).offset(10);
+                },
+            };
+
+            return {
+                type: "view",
+                props: {},
+                layout: (make, view) => {
+                    make.centerY.equalTo(view.super.center);
+                    make.height.equalTo(view.super.height).multipliedBy(this.HEIGHT_RATIO);
+                    make.width.equalTo(view.super.width).multipliedBy(this.WIDTH_RATIO);
+                    make.centerX.equalTo(view.super.center).priority(100);
+                },
+                views: [
+                    locationBar,
+                    locationBarHint
+                ]
             };
         };
         

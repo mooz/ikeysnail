@@ -110,6 +110,7 @@ function readUserScript() {
   return userScript;
 }
 
+
 // ----------------------------------------------------------- //
 // Query processing
 // ----------------------------------------------------------- //
@@ -279,8 +280,8 @@ class TabBrowser extends Component {
     };
   }
 
-  focusLocationBar() {
-    this._locationBar.focus();
+  focusLocationBar(sources) {
+    this._locationBar.focus(sources);
   }
 
   blurLocationBar() {
@@ -462,7 +463,7 @@ ${tab.url}
       this.selectTab(Math.max(0, this.currentTabIndex - 1));
     }
   }
-  
+
   _createNewTabInternal(url, tabTitle = null) {
     let tab = new TabContentWebView(
         this,
@@ -477,7 +478,7 @@ ${tab.url}
     this._tabs.push(tab);
     return tab;
   }
-  
+
   createNewTabs(urls, tabIndexToSelect = -1, titles = []) {
     urls.forEach((url, idx) => {
       let title = titles ? titles[idx] : null;
@@ -559,7 +560,7 @@ function startSession(urlToVisit) {
       lastTabs.push({ url: tabUrls[i], title: tabTitles[i] });
     }
   } catch (x) {}
-  
+
   let browser = new TabBrowser(readUserScript(), (browser) => {
     browser.history = loadHistory();
 
@@ -587,7 +588,7 @@ function startSession(urlToVisit) {
           "_keyCommandForEvent:": evt => {
             // Disable all shortcut keys of JSBox (Meta-w)
             return null;
-          }
+          },
         }
       });
 
@@ -621,6 +622,7 @@ function startSession(urlToVisit) {
         key.option = key.meta;
         key.meta = originalOption;
       }
+
       Object.freeze(key);
       const codeToKey = flip(key);
 
