@@ -13,14 +13,20 @@ const {
 const { TabListHorizontal } = require("TabBrowser/TabList");
 const { TabListVertical } = require("TabBrowser/TabList");
 
-function readMinified(prefix) {
-  if ($file.exists(prefix + ".min.js")) {
-    return $file.read(prefix + ".min.js").string;
-  } else if ($file.exists(prefix + ".js")) {
-    return $file.read(prefix + ".js").string;
-  } else {
-    return null;
+function readFile(file, initialContent = null) {
+  if (!$file.exists(file)) {
+    if (!initialContent) {
+      throw file + " not found and initial content isn't specified";
+    }
+    $file.write({
+      data: $data({
+        string: initialContent
+      }),
+      path: file
+    });
+    return initialContent;
   }
+  return $file.read(file).string;
 }
 
 // ----------------------------------------------------------- //
@@ -82,7 +88,9 @@ function saveHistory(browser) {
 // User script
 // ----------------------------------------------------------- //
 
-const CONFIG_NAMES = ["settings.default", "settings"];
+const CONFIG_SYSTEM = "settings.default.js";
+const CONFIG_USER = "settings.js";
+const CONFIG_NAMES = [CONFIG_SYSTEM, CONFIG_USER];
 
 function loadConfig() {
   const config = { sites: [] };
@@ -90,9 +98,16 @@ function loadConfig() {
   const isContent = false;
 
   for (let fileName of CONFIG_NAMES) {
-    let script = readMinified(fileName);
+    let script = readFile(
+      fileName,
+      fileName === CONFIG_USER
+        ? `// Put your configuration here. See ${CONFIG_SYSTEM} for configuration items.
+`
+        : null
+    );
     if (script) {
       eval(script);
+
       console.log("Loading " + fileName + " -> done");
     } else {
       console.log("Loading " + fileName + " -> skipped (not found)");
@@ -102,10 +117,10 @@ function loadConfig() {
 }
 
 function readUserScript() {
-  let userSettings = CONFIG_NAMES.map(readMinified)
+  let userSettings = CONFIG_NAMES.map(f => readFile(f))
     .filter(s => !!s)
     .join("\n");
-  let contentScript = readMinified("./content-script");
+  let contentScript = readFile("./content-script.js");
   console.log(contentScript);
   let userScript = contentScript.replace(
     "/*@preserve SETTINGS_HERE*/",
