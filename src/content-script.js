@@ -21,8 +21,13 @@
     }
   }
 
+  const IFRAME_WHITE_LIST = ["https://translate.googleusercontent.com"];
+
   // Do not load in ifrmae pages
-  if (window !== window.parent || inIframe()) {
+  if (
+    window !== window.parent &&
+    IFRAME_WHITE_LIST.every(prefix => location.href.indexOf(prefix) === -1)
+  ) {
     return;
   }
 
