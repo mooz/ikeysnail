@@ -119,7 +119,8 @@ config.globalKeyMap = {
     Escape: () => keysnail.escape(),
     "¥": () => keysnail.insertText("\\"),
     "ctrl-p": "ArrowUp",
-    "ctrl-n": "ArrowDown"
+    "ctrl-n": "ArrowDown",
+    "meta-f": null
   },
   view: {
     d: {
