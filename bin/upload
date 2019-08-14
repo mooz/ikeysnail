@@ -1,0 +1,19 @@
+#!/bin/bash
+
+PROJ_ROOT=$(dirname $(realpath $0))/../
+cd $PROJ_ROOT
+
+if [ $# -ne 1 ]; then
+    echo "Usage: upload HOSTNAME"
+    exit 1
+fi
+
+HOST=$1
+PKG_FILE="package/.output/ikeysnail.box"
+
+if [ -e $PKG_FILE ]; then
+    curl -X POST --form "files[]"=@$PKG_FILE http://${HOST}/upload
+else
+    echo "No package found !"
+    exit 1
+fi

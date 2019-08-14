@@ -1,14 +1,16 @@
 #!/bin/bash
 
+PROJ_ROOT=$(dirname $(realpath $0))/../
+cd $PROJ_ROOT
+
 npx prettier --tab-width 2 --write 'src/**/*.js'
 npx webpack --mode=production
 
-cd package
-npx jsbox build
+(cd package; npx jsbox build)
 
 PKG_FILE="package/.output/ikeysnail.box"
 
-if [ ! -e $PKG_FILE ]; then
+if [[ -e $PKG_FILE ]]; then
     echo "Finished creating the package."
     echo "Run $ npm run release"
 else
