@@ -168,6 +168,11 @@ config.globalKeyMap = {
     "ctrl-b": "ArrowLeft",
     "ctrl-m": "Enter",
     "/": () => $notify("searchText"),
+      "meta-t": ()=> {
+          $notify("createNewTab", {
+              url: `https://translate.google.com/translate?hl=auto&sl=auto&&sandbox=1&u=${encodeURIComponent(location.href)}`
+          });
+    },
     q: () => $notify("exitApplication"),
     "meta-i": () => keysnail.startOutlineSelector()
   }
