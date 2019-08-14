@@ -125,14 +125,7 @@ config.globalKeyMap = {
     d: {
       d: () => $notify("closeTab")
     },
-    o: {
-      g: () => $notify("focusLocationBar"),
-      o: {
-        o: () => alert("hogehogeo"),
-        i: () => alert("ooooi")
-      }
-    },
-    // o: () => keysnail.startSiteSelector(),
+    o: () => $notify("focusLocationBar"),
     "ctrl-a": () => $notify("selectTabsByPanel"),
     E: () => keysnail.toggleHitHint(true),
     e: () => keysnail.toggleHitHint(),
@@ -157,13 +150,15 @@ config.globalKeyMap = {
     " ": () => keysnail.scrollPageDown(),
     b: () => keysnail.scrollPageUp(),
     B: () => keysnail.back(),
-    H: () => keysnail.back(),
     F: () => keysnail.forward(),
+    H: () => keysnail.back(),
+    L: () => keysnail.forward(),
     f: () => keysnail.focusFirstInput(),
     g: {
       g: () => keysnail.cursorTop(),
       i: () => keysnail.focusFirstInput(),
-      e: () => keysnail.focusEditor()
+      e: () => keysnail.focusEditor(),
+      t: () => $notify("selectTabsByPanel")
     },
     G: () => keysnail.cursorBottom(),
     "ctrl-p": "ArrowUp",
@@ -171,6 +166,7 @@ config.globalKeyMap = {
     "ctrl-f": "ArrowRight",
     "ctrl-b": "ArrowLeft",
     "ctrl-m": "Enter",
+    "/": () => $notify("searchText"),
     q: () => $notify("exitApplication")
   }
 };
