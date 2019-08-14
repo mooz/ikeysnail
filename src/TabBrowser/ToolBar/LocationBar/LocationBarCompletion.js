@@ -417,7 +417,21 @@ class SuggestionWebQuery extends Suggestion {
                     if (resp.error) {
                         reject(resp.error);
                     } else {
-                        resolve(resp.data[1].map(title => new SuggestionWebQuery(title, "Google")));
+                        if (typeof resp.data === "string") {
+                            return resolve([]);
+                        }
+                        let words = resp.data[1];
+                        resolve(words.map(word => {
+                              word = word.replace(
+                                /[\\|¥]u([\d\w]{4})/gi,
+                                (match, grp) => String.fromCharCode(parseInt(grp, 16))
+                              );
+                              return new SuggestionWebQuery(word
+                                ,
+                                "Google"
+                              );
+                          })
+                        );
                     }
                 }
             });
