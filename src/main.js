@@ -554,6 +554,11 @@ __keysnail__.runPanel(${JSON.stringify(candidates)}, {
   }
 
   scrap() {
+    if (!this.config.SCRAPBOX_USER) {
+      $ui.toast(`Specify Scrapbox user in settings.js: config.SCRAPBOX_USER = 'XXX';`);
+      return;
+    }
+
     let tab = this.selectedTab;
     let content = `#bookmark
 
