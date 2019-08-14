@@ -1,13 +1,9 @@
 class Observer {
-  constructor() {
+  constructor() {}
 
-  }
+  _onReady() {}
 
-  _onReady() {
-  }
-
-  _onExit() {
-  }
+  _onExit() {}
 
   onReady() {
     try {
@@ -75,7 +71,7 @@ export class SystemKeyHandler extends Observer {
 
     let defaultCommands = Object.assign({}, config.systemKeyMap.all);
     if (config.CAPTURE_CTRL_SPACE) {
-      defaultCommands["ctrl- "] = (browser) =>
+      defaultCommands["ctrl- "] = browser =>
         browser.selectedTab.dispatchCtrlSpace();
     }
     let findBarCommands = Object.assign({}, config.systemKeyMap.findBar);
