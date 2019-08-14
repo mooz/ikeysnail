@@ -1,5 +1,5 @@
-const {Component} = require("../../../Component");
-const {LocationBarCompletion} = require("./LocationBarCompletion");
+const { Component } = require("../../../Component");
+const { LocationBarCompletion } = require("./LocationBarCompletion");
 
 // URL Bar
 const COLOR_URL_FG = "#2B9E46";
@@ -17,9 +17,7 @@ function debounce(func, interval = 500) {
 }
 
 class LocationBar extends Component {
-  constructor(browser, completion,
-              WIDTH_RATIO = 0.5,
-              HEIGHT_RATIO = 0.65) {
+  constructor(browser, completion, WIDTH_RATIO = 0.5, HEIGHT_RATIO = 0.65) {
     super();
     this._browser = browser;
     this._completion = completion;
@@ -93,14 +91,18 @@ class LocationBar extends Component {
               return;
             }
             if (completedSuggestions) {
-              allSuggestions = allSuggestions.concat(completedSuggestions.slice(0, NUM_CANDIDATE_MAX));
+              allSuggestions = allSuggestions.concat(
+                completedSuggestions.slice(0, NUM_CANDIDATE_MAX)
+              );
             }
             if (this._completion.canceled) {
               return;
             }
             this._completion.setSuggestions(
               allSuggestions,
-              this._completion.suggestionSelected ? this._completion.suggestionIndex : -1
+              this._completion.suggestionSelected
+                ? this._completion.suggestionIndex
+                : -1
             );
           });
         });
@@ -147,7 +149,7 @@ class LocationBar extends Component {
         }
       }
     };
-  };
+  }
 
   decideCandidate() {
     if (this._completion.suggestionSelected) {
@@ -167,6 +169,4 @@ class LocationBar extends Component {
   }
 }
 
-
 exports.LocationBar = LocationBar;
-    
