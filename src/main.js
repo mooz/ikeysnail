@@ -603,7 +603,7 @@ ${tab.url}
   }
 
   closeCurrentTab() {
-    return this.closeTab(browser._tabs[browser.currentTabIndex]);
+    return this.closeTab(this._tabs[this.currentTabIndex]);
   }
 
   /**
