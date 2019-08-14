@@ -261,7 +261,7 @@ class TabContentWebView extends Component {
             this.element.eval({
                 script: contentScript,
                 handler: (result, err) => {
-                    if (err || typeof result === "object") {
+                    if (err) {
                         reject(err);
                     } else {
                         resolve(result);
