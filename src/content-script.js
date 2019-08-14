@@ -884,6 +884,11 @@
         }
       });
       this._index = indexToSelect;
+      let target = this._filteredCandidates[indexToSelect];
+      target.scrollIntoView({
+        block: "center",
+        inline: "center"
+      });
     }
 
     selectNext() {
@@ -1316,12 +1321,13 @@
    font-size: 15px !important;
 }
 #keysnail-popup {
-     display: block !important;
+     display: flex !important;
+     flex-direction: column !important;
      box-shadow: 0px 2px 5px rgba(0,0,0,0.8) !important;
      position: fixed !important;
      top: 5% !important;
      left: 10% !important;
-     padding: 1em !important;
+     padding: 10px !important;
      width: 80% !important;
      height: 80% !important;
      background: white !important;
@@ -1338,8 +1344,8 @@
   display: none !important;
 }
 #keysnail-popup-candidates {
-  overflow: hidden !important;
-  height: 100%;
+  overflow: scroll !important;
+  height: 100% !important;
 }
 #keysnail-popup-query {
      width: 100%;
@@ -1378,7 +1384,7 @@
  #keysnail-popup a.selected {
      background-color: rgba(0,0,0,0.15);
  }
- 
+
 .keysnail-hint {
         background-color: yellow !important;
         color: black !important;
@@ -1403,7 +1409,7 @@
    position: fixed !important;
    z-index: ${Z_INDEX_MAX} !important;
    right: 10px !important;
-   top: 10px !important; 
+   top: 10px !important;
 }
 
 .keysnail-search-current {
