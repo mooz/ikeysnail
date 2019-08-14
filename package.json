@@ -1,19 +1,24 @@
 {
-  "name": "ikeysnail",
-  "version": "1.1.0",
-  "description": "Hackable web browser for iOS",
-  "main": "main.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "release": "release-it"
-  },
-  "author": "Masafumi Oyamada",
-  "license": "MIT",
-  "dependencies": {
-    "webpack": "^4.39.1"
-  },
-  "devDependencies": {
-    "jsbox-cli": "^1.2.1",
-    "release-it": "^12.3.5"
-  }
+    "name": "ikeysnail",
+    "version": "1.1.0",
+    "description": "Hackable web browser for iOS",
+    "main": "main.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "release": "release-it"
+    },
+    "author": "Masafumi Oyamada",
+    "license": "MIT",
+    "dependencies": {
+        "webpack": "^4.39.1"
+    },
+    "devDependencies": {
+        "jsbox-cli": "^1.2.1",
+        "release-it": "^12.3.5"
+    },
+    "release-it": {
+        "github": {
+            "release": true
+        }
+    }
 }
