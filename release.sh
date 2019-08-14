@@ -1,10 +1,10 @@
 #!/bin/bash
 
-prettier --tab-width 2 --write 'src/**/*.js'
-webpack --mode=production
+npx prettier --tab-width 2 --write 'src/**/*.js'
+npx webpack --mode=production
 
 cd package
-jsbox build
+npx jsbox build
 
 PKG_FILE="package/.output/ikeysnail.box"
 

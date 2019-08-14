@@ -14,7 +14,9 @@
     },
     "devDependencies": {
         "jsbox-cli": "^1.2.1",
-        "release-it": "^12.3.5"
+        "prettier": "^1.18.2",
+        "release-it": "^12.3.5",
+        "webpack-cli": "^3.3.6"
     },
     "release-it": {
         "github": {
