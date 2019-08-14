@@ -9,8 +9,9 @@ jsbox build
 PKG_FILE="package/.output/ikeysnail.box"
 
 if [ ! -e $PKG_FILE ]; then
-    echo "Finished!"
+    echo "Finished creating the package."
+    echo "Run $ npm run release"
 else
-    echo "Oops"
+    echo "Oops. Something went wrong."
     exit 1
 fi
