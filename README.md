@@ -23,8 +23,8 @@ The aim of this project is to provide { Vimium, Vimperator, Surfingkeys, KeySnai
 ## Installation
 
 You need JSBox (https://docs.xteko.com/#/en/) to run iKeySnail. After installing the JSBox, access either of 
-- <https://tinyurl.com/install-ikeysnail>
-- [jsbox://import/?url=https%3A%2F%2Fgithub.com%2Fmooz%2Fikeysnail%2Farchive%2Fmaster.zip](jsbox://run?name=ikeysnail)
+- <https://tinyurl.com/ikeysnail>
+- jsbox://import/?url=https%3A%2F%2Fgithub.com%2Fmooz%2Fikeysnail%2Freleases%2Flatest%2Fdownload%2Fikeysnail.box
 
 from iOS Safari. Then JSBox will install iKeySnail.
 
