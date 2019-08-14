@@ -1156,6 +1156,24 @@
       $notify("copyText", { text });
       message("Copied!", 1);
     },
+    startOutlineSelector: () => {
+      let elems = Array.from(document.querySelectorAll("h1, h2, h3, h4, h5"));
+      keysnail.runPanel(
+        elems.map(e => ({
+          text: e.textContent,
+          url: e.tagName
+        })),
+        {
+          action: index => {
+            elems[index].scrollIntoView({
+              behavior: "smooth",
+              block: "center",
+              inline: "center"
+            });
+          }
+        }
+      );
+    },
     startSiteSelector: () => {
       keysnail.runPanel(
         config.sites.map(site => ({

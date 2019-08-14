@@ -168,7 +168,8 @@ config.globalKeyMap = {
     "ctrl-b": "ArrowLeft",
     "ctrl-m": "Enter",
     "/": () => $notify("searchText"),
-    q: () => $notify("exitApplication")
+    q: () => $notify("exitApplication"),
+    "meta-i": () => keysnail.startOutlineSelector()
   }
 };
 
