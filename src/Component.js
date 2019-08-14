@@ -100,6 +100,10 @@ class Component {
     return this.element.runtimeValue();
   }
 
+  get layer() {
+    return this.runtime.$layer();
+  }
+
   build() {
     throw "Implement build() method";
   }
