@@ -69,9 +69,9 @@ config.globalKeyMap = {
       k: () => $notify("closeTab"),
       u: "meta-z"
     },
-    "meta-f": () => keysnail.searchText(),
-    "ctrl-s": () => keysnail.searchText(),
-    "ctrl-r": () => keysnail.searchText(true)
+    "meta-f": () => $notify("searchText"),
+    "ctrl-s": () => $notify("searchText"),
+    "ctrl-r": () => $notify("searchText", { backward: true })
   },
   rich: {
     "ctrl-g": () => keysnail.escape(),
@@ -186,9 +186,10 @@ config.systemKeyMap = {
     "meta-l": (browser) => browser.focusLocationBar()
   },
   findBar: {
-    "ctrl-m": (browser) => browser.decideFindBar(),
+    "ctrl-m": (browser) => browser.findNext(),
     "ctrl-g": (browser) => browser.blurFindBar(),
-    "ctrl-s": (browser) => browser.focusFindBar(),
+    "ctrl-s": (browser) => browser.findNext(),
+    "ctrl-r": (browser) => browser.findPrevious(),
     "ctrl-meta-j": (browser) => browser.selectNextTab(),
     "ctrl-meta-k": (browser) => browser.selectPreviousTab(),
     Escape: (browser) => browser.blurFindBar()

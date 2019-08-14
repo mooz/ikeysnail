@@ -187,6 +187,120 @@ class TabContentHolder extends Component {
   }
 }
 
+class SearchBar extends Component {
+  /***
+   * @param {TabBrowser} browser
+   */
+  constructor(browser) {
+    super();
+    this._browser = browser;
+    this.ID_TEXT_INPUT = "search-text-input";
+  }
+
+  get textInput() {
+    return this.element.views[0];
+  }
+
+  get positionLabel() {
+    return this.element.views[1];
+  }
+
+  next() {
+    return this._browser.searchText(this.textInput.text);
+  }
+
+  previous() {
+    return this._browser.searchText(this.textInput.text, true);
+  }
+
+  focus() {
+    this.element.hidden = false;
+    this.layer.$setZPosition(1); // Brings UI to top
+    this.textInput.text = "";
+    this.textInput.focus();
+  }
+
+  blur() {
+    this._browser.searchText(""); // reset view
+    this.element.hidden = true;
+    this.layer.$setZPosition(-1); // Hide UI
+    this.textInput.blur();
+    this._browser.focusContent();
+  }
+
+  updatePositionInfo(info) {
+    this.positionLabel.text = info;
+  }
+
+  build() {
+    const height = 45;
+
+    return {
+      type: "view",
+      props: {
+        hidden: true,
+        bgcolor: $color("#C6C8CE"),
+        color: $color("#000000")
+      },
+      layout: (make, view) => {
+        make.height.equalTo(height);
+        make.width.equalTo(view.super.width);
+        make.top.equalTo(0);
+      },
+      views: [
+        {
+          type: "input",
+          id: this.ID_TEXT_INPUT,
+          props: {
+            textColor: $color("#000000"),
+            bgcolor: $color("#D1D3D9"),
+            radius: 10,
+            align: $align.left
+          },
+          layout: (make, view) => {
+            make.height.equalTo(height * 0.75);
+            make.width.equalTo(view.super).multipliedBy(0.7);
+            make.centerY.equalTo(view.super);
+            make.centerX.equalTo(view.super);
+          },
+          events: {
+            didBeginEditing: sender => {
+              // focused
+              this.positionLabel.text = "";
+            },
+            tapped: sender => {
+              this.focus();
+            },
+            returned: sender => {
+              this.next();
+            },
+            didEndEditing: sender => {
+              this.blur();
+            },
+            changed: sender => {
+              // TODO: debounce?
+              this._browser.searchText(sender.text);
+            }
+          }
+        },
+        {
+          type: "label",
+          props: {
+            textColor: $color("gray"),
+            text: "",
+            align: $align.right
+          },
+          layout: (make, view) => {
+            make.right.equalTo(-20);
+            make.centerY.equalTo(view.super);
+          },
+          events: {}
+        }
+      ]
+    };
+  }
+}
+
 // -------------------------------------------------------------------- //
 // Browser class
 // -------------------------------------------------------------------- //
@@ -236,6 +350,9 @@ class TabBrowser extends Component {
     const tabContentHolder = new TabContentHolder(this);
     this._tabContentHolder = tabContentHolder;
 
+    const searchBar = new SearchBar(this);
+    this._searchBar = searchBar;
+
     const tabList = config.TAB_VERTICAL
       ? new TabListVertical(this)
       : new TabListHorizontal(this);
@@ -261,6 +378,8 @@ class TabBrowser extends Component {
       .addChild(leftToolBar)
       .addChild(locationBar)
       .addChild(rightToolBar);
+
+    tabContentHolder.addChild(searchBar);
 
     tabAndContentContainer.addChild(tabList).addChild(tabContentHolder);
 
@@ -301,6 +420,30 @@ class TabBrowser extends Component {
 
   blurLocationBar() {
     this._locationBar.blur();
+  }
+
+  focusFindBar() {
+    this._searchBar.focus();
+  }
+
+  blurFindBar() {
+    this._searchBar.blur();
+  }
+
+  findNext() {
+    this._searchBar.next();
+  }
+
+  findPrevious() {
+    this._searchBar.previous();
+  }
+
+  updateSearchPositionInfo(info) {
+    this._searchBar.updatePositionInfo(info);
+  }
+
+  searchText(text, backward = false) {
+    return this.selectedTab.searchText(text, backward);
   }
 
   decideLocationBarCandidate() {

@@ -100,6 +100,13 @@ class TabContentWebView extends Component {
             focusLocationBar: () => {
                 this.browser.focusLocationBar();
             },
+            searchText: (args={}) => {
+                let {backward} = args;
+                this.browser.focusFindBar(backward);
+            },
+            updateSearchPositionInfo: ({ resultText }) => {
+                this.browser.updateSearchPositionInfo(resultText);
+            },
             copyText: ({text}) => {
                 $clipboard.set({type: "public.plain-text", value: text});
             },
@@ -184,6 +191,10 @@ class TabContentWebView extends Component {
 
     showBookmark() {
         evalScript(this, "__keysnail__.startSiteSelector(true)");
+    }
+
+    async searchText(text, backward=false) {
+        await evalScript(this, `__keysnail__.searchTextEncoded('${encodeURIComponent(text)}', ${backward})`);
     }
 
     goBack() {

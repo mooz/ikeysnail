@@ -78,6 +78,7 @@
   let gHitHintDisposerInternal = null;
 
   let scriptLoadedHandlers = {};
+
   function loadScript(src, charset = "UTF-8") {
     if (scriptLoadedHandlers.hasOwnProperty(src)) {
       // Already loaded or requested.
@@ -1169,31 +1170,17 @@
       panel.run(candidates, options);
     },
     marked: command => ({ command: command, marked: true }),
-    searchText: async backward => {
-      await loadScript(
-        "https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js"
-      );
-
-      let id = "keysnail-search-bar";
-      let searchBar = document.getElementById(id);
-
-      if (searchBar && searchBar.classList.contains("keysnail-active")) {
-        mouseDownElement(
-          document.querySelector(`#${id} button.${backward ? "prev" : "next"}`)
-        );
-        return;
-      }
-
-      let currentNodeIndex = 0;
-      let results = null;
-
+    searchTextEncoded: async (encodedText, backward) => {
       function updateSearchResultView() {
-        let counter = document.querySelector(`#${id} span`);
-        counter.textContent = "";
+        let results = keysnail.results;
+        if (!results || !results.length) {
+          $notify("updateSearchPositionInfo", { resultText: "" });
+          return;
+        }
 
-        if (!results || !results.length) return;
-
-        counter.textContent = `${currentNodeIndex + 1} / ${results.length}`;
+        $notify("updateSearchPositionInfo", {
+          resultText: `${keysnail.currentNodeIndex + 1} / ${results.length}`
+        });
 
         if (document.querySelectorAll(".keysnail-search-current")) {
           Array.from(
@@ -1201,7 +1188,7 @@
           ).forEach(e => e.classList.remove("keysnail-search-current"));
         }
 
-        let current = results[currentNodeIndex];
+        let current = results[keysnail.currentNodeIndex];
         current.classList.add("keysnail-search-current");
         current.scrollIntoView({
           behavior: "smooth",
@@ -1211,118 +1198,71 @@
       }
 
       function gotoNext() {
-        if (!results || !results.length) return;
-        currentNodeIndex =
-          currentNodeIndex === results.length - 1 ? 0 : currentNodeIndex + 1;
+        if (!keysnail.results || !keysnail.results.length) return;
+        keysnail.currentNodeIndex =
+          keysnail.currentNodeIndex === keysnail.results.length - 1
+            ? 0
+            : keysnail.currentNodeIndex + 1;
         updateSearchResultView();
       }
 
       function gotoPrevious() {
-        if (!results || !results.length) return;
-        currentNodeIndex =
-          currentNodeIndex === 0 ? results.length - 1 : currentNodeIndex - 1;
+        if (!keysnail.results || !keysnail.results.length) return;
+        keysnail.currentNodeIndex =
+          keysnail.currentNodeIndex === 0
+            ? keysnail.results.length - 1
+            : keysnail.currentNodeIndex - 1;
         updateSearchResultView();
       }
 
-      if (!searchBar) {
-        searchBar = document.createElement("div");
-        searchBar.setAttribute("id", id);
-        let input = document.createElement("input");
-        input.setAttribute("type", "text");
+      let keyword = decodeURIComponent(encodedText);
 
-        input.addEventListener(
-          "keydown",
-          ev => {
-            if (ev.code === "Enter") {
-              gotoNext();
-            }
-          },
-          false
+      if (keysnail.searchQuery === keyword) {
+        if (backward) {
+          gotoPrevious();
+        } else {
+          gotoNext();
+        }
+      } else {
+        await loadScript(
+          "https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js"
         );
-        input.addEventListener(
-          "input",
-          debounce(ev => {
-            let keyword = ev.target.value;
-            let markInstance = keysnail.markInstance;
-            markInstance.unmark({
+
+        keysnail.currentNodeIndex = 0;
+        keysnail.results = null;
+        keysnail.markInstance = new Mark(document.querySelectorAll("body"));
+
+        let markInstance = keysnail.markInstance;
+        markInstance.unmark({
+          done: () => {
+            markInstance.mark(keyword, {
+              className: "keysnail-search-results",
               done: () => {
-                markInstance.mark(keyword, {
-                  done: () => {
-                    results = Array.from(document.querySelectorAll("mark")).map(
-                      e => [e, e.getBoundingClientRect()]
-                    );
-                    results.sort(([a, aPos], [b, bPos]) => {
-                      if (aPos.top < bPos.top) {
-                        return -1;
-                      }
-                      if (aPos.top === bPos.top) {
-                        if (aPos.left < bPos.left) {
-                          return -1;
-                        }
-                      }
-                      return 1;
-                    });
-                    results = results.map(([e, pos]) => e);
-                    // TODO: select result most close to current scrollTop
-                    currentNodeIndex = 0;
-                    updateSearchResultView();
+                let results = Array.from(
+                  document.querySelectorAll("mark.keysnail-search-results")
+                ).map(e => [e, e.getBoundingClientRect()]);
+                results.sort(([a, aPos], [b, bPos]) => {
+                  if (aPos.top < bPos.top) {
+                    return -1;
                   }
+                  if (aPos.top === bPos.top) {
+                    if (aPos.left < bPos.left) {
+                      return -1;
+                    }
+                  }
+                  return 1;
                 });
+                keysnail.results = results.map(([e, pos]) => e);
+                // TODO: select result most close to current scrollTop
+                keysnail.currentNodeIndex = 0;
+                updateSearchResultView();
               }
             });
-          }, 150),
-          false
-        );
-
-        function finish() {
-          searchBar.classList.remove("keysnail-active");
-          keysnail.markInstance.unmark();
-        }
-
-        input.addEventListener("blur", () => {
-          finish();
+          }
         });
-
-        let finishButton = document.createElement("button");
-        finishButton.textContent = "Done";
-        finishButton.addEventListener("mousedown", ev => {
-          finish();
-        });
-
-        let counter = document.createElement("span");
-        let prevButton = document.createElement("button");
-        prevButton.textContent = "Prev";
-        prevButton.classList.add("prev");
-        prevButton.addEventListener("mousedown", ev => {
-          ev.preventDefault();
-          ev.stopPropagation();
-          gotoPrevious();
-        });
-
-        let nextButton = document.createElement("button");
-        nextButton.textContent = "Next";
-        nextButton.classList.add("next");
-        nextButton.addEventListener("mousedown", ev => {
-          ev.preventDefault();
-          ev.stopPropagation();
-          gotoNext();
-        });
-
-        searchBar.appendChild(finishButton);
-        searchBar.appendChild(input);
-        searchBar.appendChild(counter);
-        searchBar.appendChild(prevButton);
-        searchBar.appendChild(nextButton);
-
-        document.documentElement.appendChild(searchBar);
       }
-      let counter = document.querySelector(`#${id} span`);
-      counter.textContent = "";
-      keysnail.markInstance = new Mark(document.querySelector("body"));
-      searchBar.classList.add("keysnail-active");
-      let input = document.querySelector(`#${id} input`);
-      input.value = "";
-      input.focus();
+
+      keysnail.searchQuery = keyword;
     },
     setScriptLoadedCallback: (src, callback) => {
       scriptLoadedHandlers[src] = callback;
@@ -1448,56 +1388,10 @@
    top: 10px !important; 
 }
 
-#keysnail-search-bar.keysnail-active {
-   display: flex !important;
-}
-
-#keysnail-search-bar {
-   display: none !important;
-   justify-content: center !important;
-   align-items: center !important;   
-   height: 45px !important;   
-   background-color: #D1D3D9 !important;
-   position: fixed !important;
-   z-index: ${Z_INDEX_MAX} !important;
-   width: 100% !important;
-   bottom: 100px !important;   
-}
-
-#keysnail-search-bar button {
-   color: black !important;
-   outline: none !important;
-   background-color: transparent !important;
-   border-width: 0px !important;
-}
-
-#keysnail-search-bar span {
-   position: absolute !important;   
-   color: gray !important;
-   padding-left: 10x !important;
-}
-
-#keysnail-search-bar input {
-   outline: none !important;  
-   min-width: 60% !important;
-   color: black !important;
-   background-color: #C6C8CE !important;
-   border-radius: 10px !important;
-   border: 0px !important;
-   height: 80% !important;     
-}
-
 .keysnail-search-current {
   background-color: yellow !important;
   border: 1px solid orange !important;
   border-radius: 3px !important;
-}
-
-#keysnail-search-bar * {
-   font-weight: normal !important;
-   box-sizing: border-box;
-   font-family: -apple-system !important; 
-   font-size: 15px !important;
 }
 `);
 
