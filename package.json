@@ -19,7 +19,6 @@
     "release-it": {
         "github": {
             "release": true,
-            "draft": true,
             "assets": ["package/.output/ikeysnail.box"]
         }
     }
