@@ -264,26 +264,32 @@ function findPageEntriesByQuery(
   }
 
   return new Promise((resolve, reject) => {
-    let matchedIndices = [];
-    let index;
-    for (let i = 0; i < urls.length; ++i) {
-      // Reverse order (e.g., for histories, it's natural to show last ones)
-      index = reverse ? urls.length - 1 - i : i;
-      // Don't match to http part (because it's obvious)
-      let url = urls[index].replace(/^https?:\/\//, "");
-      let title = titles[index];
-      if (caseInsensitive) {
-        title = title.toLowerCase();
-      }
-      if (url.indexOf(query) >= 0 || title.indexOf(query) >= 0) {
-        matchedIndices.push(index);
-        if (matchedIndices.length >= RESULTS_COUNT_LIMIT) {
-          resolve(matchedIndices);
-          return;
+    try {
+      let matchedIndices = [];
+      let index;
+      for (let i = 0; i < urls.length; ++i) {
+        // Reverse order (e.g., for histories, it's natural to show last ones)
+        index = reverse ? urls.length - 1 - i : i;
+        // sometimes url is null
+        if (!urls[index]) continue;
+        // Don't match to http part (because it's obvious)
+        let url = urls[index].replace(/^https?:\/\//, "");
+        let title = titles[index] || "";
+        if (caseInsensitive) {
+          title = title.toLowerCase();
+        }
+        if (url.indexOf(query) >= 0 || title.indexOf(query) >= 0) {
+          matchedIndices.push(index);
+          if (matchedIndices.length >= RESULTS_COUNT_LIMIT) {
+            resolve(matchedIndices);
+            return;
+          }
         }
       }
+      resolve(matchedIndices);
+    } catch (x) {
+      reject(x);
     }
-    resolve(matchedIndices);
   });
 }
 
