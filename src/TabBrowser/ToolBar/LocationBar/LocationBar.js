@@ -55,7 +55,6 @@ class LocationBar extends Component {
       if (this._completion.canceled) {
         return;
       }
-      const NUM_CANDIDATE_MAX = 5;
       const suggestionList = this._browser.config.LOCATIONBAR_SUGGESTIONS;
       // config.LOCATIONBAR_SUGGESTIONS = [
       //       "SuggestionTab",
@@ -74,10 +73,7 @@ class LocationBar extends Component {
       const waitAll = this._browser.config.LOCATIONBAR_SUGGESTIONS_SYNCED;
       if (waitAll) {
         let suggestions = await Promise.all(suggestionTasks);
-        suggestions = suggestions
-          .filter(s => !!s)
-          .map(eachSuggestions => eachSuggestions.slice(0, NUM_CANDIDATE_MAX))
-          .flat();
+        suggestions = suggestions.filter(s => !!s).flat();
         if (this._completion.canceled) {
           return;
         }
@@ -86,25 +82,27 @@ class LocationBar extends Component {
         // (TODO) reorder candidates according to sources -> Not needed for usability.
         let allSuggestions = [];
         suggestionTasks.forEach(task => {
-          task.then(completedSuggestions => {
-            if (latestQuery !== query) {
-              return;
-            }
-            if (completedSuggestions) {
-              allSuggestions = allSuggestions.concat(
-                completedSuggestions.slice(0, NUM_CANDIDATE_MAX)
+          task
+            .then(completedSuggestions => {
+              if (latestQuery !== query) {
+                return;
+              }
+              if (completedSuggestions) {
+                allSuggestions = allSuggestions.concat(completedSuggestions);
+              }
+              if (this._completion.canceled) {
+                return;
+              }
+              this._completion.setSuggestions(
+                allSuggestions,
+                this._completion.suggestionSelected
+                  ? this._completion.suggestionIndex
+                  : -1
               );
-            }
-            if (this._completion.canceled) {
-              return;
-            }
-            this._completion.setSuggestions(
-              allSuggestions,
-              this._completion.suggestionSelected
-                ? this._completion.suggestionIndex
-                : -1
-            );
-          });
+            })
+            .error(error => {
+              console.error("Error in suggestion: " + error);
+            });
         });
       }
     };
