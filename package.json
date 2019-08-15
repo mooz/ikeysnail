@@ -11,6 +11,7 @@
     "author": "Masafumi Oyamada",
     "license": "MIT",
     "dependencies": {
+        "fxa-js-client": "^1.0.17",
         "webpack": "^4.39.1"
     },
     "devDependencies": {
