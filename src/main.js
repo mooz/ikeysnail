@@ -56,18 +56,39 @@ function saveTabInfo(browser) {
   });
 }
 
+function measure(name, process) {
+  let begin = Date.now();
+  let value = process();
+  let end = Date.now();
+  console.log(`${name}: ${end - begin} msec`);
+  return value;
+}
+
 // ----------------------------------------------------------- //
 // History (TODO: class)
 // ----------------------------------------------------------- //
 
 function loadHistory() {
   try {
-    let history = JSON.parse($file.read("history.json").string.trim());
-    if (!Array.isArray(history.page.urls)) throw "Error";
-    if (!Array.isArray(history.page.titles)) throw "Error";
-    if (!Array.isArray(history.bookmark)) throw "Error";
-    return history;
+    return measure("load history", () => {
+      let history = JSON.parse($file.read("history.json").string.trim());
+      if (!Array.isArray(history.page.urls))
+        throw "History: page urls are invalid";
+      if (!Array.isArray(history.page.titles))
+        throw "History: titles are invalid";
+      if (!Array.isArray(history.bookmark))
+        throw "History: bookmarks are invalid";
+      return history;
+    });
   } catch (x) {
+    $ui.toast("Valid history file not found. Create from scratch.");
+    // Backup invalid history.json (sometimes it's useful)
+    if ($file.exists("history.json")) {
+      $file.move({
+        src: "history.json",
+        dst: "history.json.invalid_backup"
+      });
+    }
     return {
       page: {
         urls: [],
@@ -79,9 +100,11 @@ function loadHistory() {
 }
 
 function saveHistory(browser) {
-  $file.write({
-    data: $data({ string: JSON.stringify(browser.history) }),
-    path: "history.json"
+  measure("save history", () => {
+    $file.write({
+      data: $data({ string: JSON.stringify(browser.history) }),
+      path: "history.json"
+    });
   });
 }
 
