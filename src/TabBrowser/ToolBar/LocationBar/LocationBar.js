@@ -82,27 +82,23 @@ class LocationBar extends Component {
         // (TODO) reorder candidates according to sources -> Not needed for usability.
         let allSuggestions = [];
         suggestionTasks.forEach(task => {
-          task
-            .then(completedSuggestions => {
-              if (latestQuery !== query) {
-                return;
-              }
-              if (completedSuggestions) {
-                allSuggestions = allSuggestions.concat(completedSuggestions);
-              }
-              if (this._completion.canceled) {
-                return;
-              }
-              this._completion.setSuggestions(
-                allSuggestions,
-                this._completion.suggestionSelected
-                  ? this._completion.suggestionIndex
-                  : -1
-              );
-            })
-            .error(error => {
-              console.error("Error in suggestion: " + error);
-            });
+          task.then(completedSuggestions => {
+            if (latestQuery !== query) {
+              return;
+            }
+            if (completedSuggestions) {
+              allSuggestions = allSuggestions.concat(completedSuggestions);
+            }
+            if (this._completion.canceled) {
+              return;
+            }
+            this._completion.setSuggestions(
+              allSuggestions,
+              this._completion.suggestionSelected
+                ? this._completion.suggestionIndex
+                : -1
+            );
+          });
         });
       }
     };
