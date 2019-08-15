@@ -55,6 +55,7 @@ class LocationBar extends Component {
       if (this._completion.canceled) {
         return;
       }
+      const NUM_CANDIDATE_MAX = 5;
       const suggestionList = this._browser.config.LOCATIONBAR_SUGGESTIONS;
       // config.LOCATIONBAR_SUGGESTIONS = [
       //       "SuggestionTab",
@@ -73,7 +74,10 @@ class LocationBar extends Component {
       const waitAll = this._browser.config.LOCATIONBAR_SUGGESTIONS_SYNCED;
       if (waitAll) {
         let suggestions = await Promise.all(suggestionTasks);
-        suggestions = suggestions.filter(s => !!s).flat();
+        suggestions = suggestions
+          .filter(s => !!s)
+          .map(eachSuggestions => eachSuggestions.slice(0, NUM_CANDIDATE_MAX))
+          .flat();
         if (this._completion.canceled) {
           return;
         }
@@ -87,7 +91,9 @@ class LocationBar extends Component {
               return;
             }
             if (completedSuggestions) {
-              allSuggestions = allSuggestions.concat(completedSuggestions);
+              allSuggestions = allSuggestions.concat(
+                completedSuggestions.slice(0, NUM_CANDIDATE_MAX)
+              );
             }
             if (this._completion.canceled) {
               return;
