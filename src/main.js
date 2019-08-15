@@ -63,8 +63,9 @@ function saveTabInfo(browser) {
 function loadHistory() {
   try {
     let history = JSON.parse($file.read("history.json").string.trim());
-    if (!Array.isArray(history.pages)) throw "Error";
-    if (!Array.isArray(history.bookmarks)) throw "Error";
+    if (!Array.isArray(history.page.urls)) throw "Error";
+    if (!Array.isArray(history.page.titles)) throw "Error";
+    if (!Array.isArray(history.bookmark)) throw "Error";
     return history;
   } catch (x) {
     return {
