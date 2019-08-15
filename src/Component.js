@@ -109,8 +109,6 @@ class Component {
   }
 
   buildSource() {
-    console.log("Build " + this.constructor.name);
-
     // Traverse children (DFS)
     // build()  // this element
     //   build() // child 1
@@ -157,7 +155,6 @@ class Component {
     } else {
       // **** Root element ****
       // Root element
-      console.log("Root element. call $ui.render(): " + viewSource.type);
       $ui.render(viewSource);
     }
   }
