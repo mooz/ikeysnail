@@ -29,7 +29,7 @@ module.exports = {
 	  plugins: [new webpack.ProgressPlugin()],
 
     resolve: {
-        modules: ["./src"],
+        modules: ["./src", "./node_modules"],
     },
 
 	  module: {
