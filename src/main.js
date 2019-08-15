@@ -480,7 +480,7 @@ class TabBrowser extends Component {
         urls: this._pastURLs,
         titles: this._pastTitles
       },
-      bookmark: {}
+      bookmark: []
     };
   }
 
