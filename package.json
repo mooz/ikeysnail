@@ -10,15 +10,17 @@
     },
     "author": "Masafumi Oyamada",
     "license": "MIT",
-    "dependencies": {
-        "fxa-js-client": "^1.0.17",
-        "webpack": "^4.39.1"
-    },
     "devDependencies": {
         "jsbox-cli": "^1.2.1",
         "prettier": "^1.18.2",
         "release-it": "^12.3.5",
-        "webpack-cli": "^3.3.6"
+        "webpack": "^4.39.2",
+        "webpack-cli": "^3.3.6",
+        "buffer-json": "^2.0.0",
+        "fxa-js-client": "^1.0.17",
+        "hawk": "^7.0.10",
+        "hkdf": "0.0.2",
+        "sjcl": "^1.0.8"
     },
     "release-it": {
         "github": {
