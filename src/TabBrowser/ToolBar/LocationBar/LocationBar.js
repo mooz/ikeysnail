@@ -27,7 +27,7 @@ class LocationBar extends Component {
 
   focus() {
     this.element.focus();
-    this.runtime.$selectAll();
+    this.runtime.$selectAll(null);
     this._completion.reset();
   }
 
