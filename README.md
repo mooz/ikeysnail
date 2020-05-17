@@ -28,7 +28,15 @@ You need JSBox (https://docs.xteko.com/#/en/) to run iKeySnail. After installing
 
 from iOS Safari. Then JSBox will install iKeySnail.
 
-You can also manually download the repository as a `zip` file and install it in JSBox.
+### Manual Build
+
+You can also manually build the package and install it in JSBox:
+
+    npx webpack --mode=production
+    cd package
+    npx jsbox build
+    
+then copy `.output/ikeysnail.box` to your JSBox app.
 
 ## Usage
 
