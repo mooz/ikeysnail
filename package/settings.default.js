@@ -55,7 +55,7 @@ if (!isContent) {
 config.globalKeyMap = {
   all: {
     "meta-w": () => keysnail.copyRegion(),
-    "ctrl-K": () => keysnail.launchDebugConsole(),
+    ":": () => keysnail.runEvalConsole(),
     "ctrl-meta-j": () => $notify("selectNextTab"),
     "ctrl-meta-k": () => $notify("selectPreviousTab"),
     "ctrl-Tab": () => $notify("selectNextTab"),

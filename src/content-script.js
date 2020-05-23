@@ -822,10 +822,11 @@
 
     action(index) {
       let candidate = this._filteredCandidates[index];
+      let query = this.queryInput.value;
       try {
         if (this._action) {
           let originalIndex = this.allCandidates.indexOf(candidate);
-          this._action(originalIndex, candidate);
+          this._action(originalIndex, candidate, query);
         } else {
           candidate.focus();
           clickElement(candidate);
@@ -1194,6 +1195,16 @@
         })),
         { toggle: true }
       );
+    },
+    runEvalConsole: () => {
+      keysnail.runPanel([], {
+        action: (_, __, code) => {
+          const result = eval(code);
+          if (typeof result !== "undefined") {
+            message(result + "");
+          }
+        },
+      });
     },
     runPanel: (candidates, options) => {
       let panel = getPanel();
