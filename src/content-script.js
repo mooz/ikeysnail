@@ -890,10 +890,12 @@
       });
       this._index = indexToSelect;
       let target = this._filteredCandidates[indexToSelect];
-      target.scrollIntoView({
-        block: "center",
-        inline: "center"
-      });
+      if (target) {
+        target.scrollIntoView({
+          block: "center",
+          inline: "center",
+        });
+      }
     }
 
     selectNext() {
