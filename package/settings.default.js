@@ -40,7 +40,7 @@ if (!isContent) {
     "SuggestionBookmark",
     "SuggestionHistory",
     "SuggestionScrapbox",
-    "SuggestionWebQuery"
+    "SuggestionWebQuery",
   ];
   config.LOCATIONBAR_SUGGESTIONS_SYNCED = false;
 }
@@ -67,11 +67,11 @@ config.globalKeyMap = {
     "ctrl-meta-g": () => $notify("openClipboardURL"),
     "ctrl-x": {
       k: () => $notify("closeTab"),
-      u: "meta-z"
+      u: "meta-z",
     },
     "meta-f": () => $notify("searchText"),
     "ctrl-s": () => $notify("searchText"),
-    "ctrl-r": () => $notify("searchText", { backward: true })
+    "ctrl-r": () => $notify("searchText", { backward: true }),
   },
   rich: {
     "ctrl-g": () => keysnail.escape(),
@@ -112,7 +112,7 @@ config.globalKeyMap = {
     "meta-v": keysnail.marked("PageUp"),
     "ctrl-y": () => keysnail.paste(),
     "ctrl-k": () => keysnail.killLine(),
-    "ctrl-w": () => keysnail.killRegion()
+    "ctrl-w": () => keysnail.killRegion(),
   },
   edit: {
     "ctrl-g": () => keysnail.escape(),
@@ -120,11 +120,11 @@ config.globalKeyMap = {
     "¥": () => keysnail.insertText("\\"),
     "ctrl-p": "ArrowUp",
     "ctrl-n": "ArrowDown",
-    "meta-f": null
+    "meta-f": null,
   },
   view: {
     d: {
-      d: () => $notify("closeTab")
+      d: () => $notify("closeTab"),
     },
     o: () => $notify("focusLocationBar"),
     "ctrl-a": () => $notify("selectTabsByPanel"),
@@ -136,7 +136,7 @@ config.globalKeyMap = {
       y: () => {
         $notify("copyText", { text: location.href });
         message("Copied: " + location.href);
-      }
+      },
     },
     u: () => $notify("undoClosedTab"),
     p: () => $notify("openClipboardURL"),
@@ -159,7 +159,7 @@ config.globalKeyMap = {
       g: () => keysnail.cursorTop(),
       i: () => keysnail.focusFirstInput(),
       e: () => keysnail.focusEditor(),
-      t: () => $notify("selectTabsByPanel")
+      t: () => $notify("selectTabsByPanel"),
     },
     G: () => keysnail.cursorBottom(),
     "ctrl-p": "ArrowUp",
@@ -168,14 +168,16 @@ config.globalKeyMap = {
     "ctrl-b": "ArrowLeft",
     "ctrl-m": "Enter",
     "/": () => $notify("searchText"),
-      "meta-t": ()=> {
-          $notify("createNewTab", {
-              url: `https://translate.google.com/translate?hl=auto&sl=auto&&sandbox=1&u=${encodeURIComponent(location.href)}`
-          });
+    "meta-t": () => {
+      $notify("createNewTab", {
+        url: `https://translate.google.com/translate?hl=auto&sl=auto&&sandbox=1&u=${encodeURIComponent(
+          location.href
+        )}`,
+      });
     },
     q: () => $notify("exitApplication"),
-    "meta-i": () => keysnail.startOutlineSelector()
-  }
+    "meta-i": () => keysnail.startOutlineSelector(),
+  },
 };
 
 // --------------------------------------------------------------------------------
@@ -186,7 +188,7 @@ config.systemKeyMap = {
   all: {
     "ctrl-meta-j": (browser) => browser.selectNextTab(),
     "ctrl-meta-k": (browser) => browser.selectPreviousTab(),
-    "meta-l": (browser) => browser.focusLocationBar()
+    "meta-l": (browser) => browser.focusLocationBar(),
   },
   findBar: {
     "ctrl-m": (browser) => browser.findNext(),
@@ -195,7 +197,7 @@ config.systemKeyMap = {
     "ctrl-r": (browser) => browser.findPrevious(),
     "ctrl-meta-j": (browser) => browser.selectNextTab(),
     "ctrl-meta-k": (browser) => browser.selectPreviousTab(),
-    Escape: (browser) => browser.blurFindBar()
+    Escape: (browser) => browser.blurFindBar(),
   },
   urlBar: {
     "ctrl-p": (browser) => browser.selectLocationBarPreviousCandidate(),
@@ -204,8 +206,8 @@ config.systemKeyMap = {
     "ctrl-g": (browser) => browser.blurLocationBar(),
     "ctrl-meta-j": (browser) => browser.selectNextTab(),
     "ctrl-meta-k": (browser) => browser.selectPreviousTab(),
-    Escape: (browser) => browser.blurLocationBar()
-  }
+    Escape: (browser) => browser.blurLocationBar(),
+  },
 };
 
 // --------------------------------------------------------------------------------
@@ -214,7 +216,7 @@ config.systemKeyMap = {
 
 config.sites.push({
   alias: "Google",
-  url: "https://www.google.com"
+  url: "https://www.google.com",
 });
 
 const GDOCS_KEYMAP = {
@@ -224,20 +226,20 @@ const GDOCS_KEYMAP = {
     "meta-d": keysnail.marked("alt-Delete"),
     "ctrl-_": "ctrl-z",
     "ctrl-z": "meta-z",
-    "ctrl-s": "ctrl-f"
-  }
+    "ctrl-s": "ctrl-f",
+  },
 };
 
 config.sites.push({
   alias: "Google Docs",
   url: "https://docs.google.com/",
-  keymap: GDOCS_KEYMAP
+  keymap: GDOCS_KEYMAP,
 });
 
 config.sites.push({
   alias: "Google Docs (Slide)",
   url: "https://docs.google.com/presentation/",
-  keymap: GDOCS_KEYMAP
+  keymap: GDOCS_KEYMAP,
 });
 
 config.sites.push({
@@ -246,7 +248,7 @@ config.sites.push({
   style: `
 .toolbar { font-size: small !important; }
 .entity { font-size: small !important; }
-`
+`,
 });
 
 config.sites.push({
@@ -274,7 +276,7 @@ config.sites.push({
           let replacedText = "";
           const todoPattern = /\[(?:TODO|DONE)\] /;
           if (todoPattern.test(text)) {
-            replacedText = text.replace(todoPattern, match =>
+            replacedText = text.replace(todoPattern, (match) =>
               match === "[TODO] " ? "[DONE] " : ""
             );
           } else {
@@ -283,23 +285,23 @@ config.sites.push({
           }
           keysnail.dispatchKey("Backspace");
           keysnail.insertText(replacedText);
-        }
-      }
-    }
+        },
+      },
+    },
   },
   style: `
 #editor {
   caret-color: transparent !important;
 }
-`
+`,
 });
 
 config.sites.push({
-    alias: "HackMD",
-    url: "https://hackmd.io/",
-    style: `
+  alias: "HackMD",
+  url: "https://hackmd.io/",
+  style: `
 .CodeMirror {
   caret-color: transparent !important;
 }
-`
+`,
 });

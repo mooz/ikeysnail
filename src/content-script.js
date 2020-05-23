@@ -32,7 +32,7 @@
   // Do not load in ifrmae pages
   if (
     window !== window.parent &&
-    IFRAME_WHITE_LIST.every(prefix => location.href.indexOf(prefix) === -1)
+    IFRAME_WHITE_LIST.every((prefix) => location.href.indexOf(prefix) === -1)
   ) {
     return;
   }
@@ -149,11 +149,11 @@
           '[role="menuitemradio" i]',
           '[role="option" i]',
           '[role="radio" i]',
-          '[role="switch" i]'
+          '[role="switch" i]',
         ],
-        block: []
+        block: [],
       },
-      hintCh: "asdfghjkl"
+      hintCh: "asdfghjkl",
     };
 
     const clickableElms = [
@@ -161,12 +161,12 @@
         customSelector
           ? customSelector
           : settings.elm.allow.join(",") || undefined
-      )
+      ),
     ]
       .filter(
-        elm => elm.closest(settings.elm.block.join(",") || undefined) === null
+        (elm) => elm.closest(settings.elm.block.join(",") || undefined) === null
       )
-      .map(elm => {
+      .map((elm) => {
         const domRect = elm.getBoundingClientRect();
 
         return {
@@ -176,10 +176,10 @@
           left: Math.floor(domRect.left || domRect.x),
           right: Math.floor(domRect.right),
           top: Math.floor(domRect.top || domRect.y),
-          width: Math.floor(domRect.width)
+          width: Math.floor(domRect.width),
         };
       })
-      .filter(data => {
+      .filter((data) => {
         const windowH = window.innerHeight,
           windowW = window.innerWidth;
 
@@ -239,7 +239,7 @@
         data.hintCh = hints[index];
         return data;
       })
-      .map(data => {
+      .map((data) => {
         const hintElm = document.createElement("div");
         hintElm.classList.add("keysnail-hint");
         hintElm.style.top = `${data.top}px`;
@@ -253,7 +253,7 @@
     const fin = () => {
       gHitHintDisposerInternal = null;
       window.removeEventListener("keydown", onkeydown);
-      viewData.forEach(data => {
+      viewData.forEach((data) => {
         if (data.hintElm) {
           data.hintElm.remove();
         }
@@ -264,7 +264,7 @@
     };
 
     let input = "";
-    const onkeydown = e => {
+    const onkeydown = (e) => {
       if (!(e.metaKey || e.shiftKey)) {
         if (e.key === "Control" || e.key === "Alt") {
           return;
@@ -277,12 +277,12 @@
           input += e.key.toUpperCase();
 
           viewData
-            .filter(data => !data.hintCh.startsWith(input))
-            .forEach(data => {
+            .filter((data) => !data.hintCh.startsWith(input))
+            .forEach((data) => {
               data.hintElm.remove();
             });
 
-          const selectedElms = viewData.filter(data =>
+          const selectedElms = viewData.filter((data) =>
             data.hintCh.startsWith(input)
           );
 
@@ -327,7 +327,7 @@
     ArrowUp: 38,
     ArrowRight: 39,
     ArrowDown: 40,
-    Delete: 46
+    Delete: 46,
   };
   const keyToKeyCode = Object.assign(
     {
@@ -344,7 +344,7 @@
       "[": 219,
       "\\": 220,
       "]": 221,
-      "'": 222
+      "'": 222,
     },
     nonDisplayableKeys
   );
@@ -370,12 +370,12 @@
       ? {
           alt: "alt",
           meta: "meta",
-          ctrl: "ctrl"
+          ctrl: "ctrl",
         }
       : {
           alt: "meta",
           meta: "alt",
-          ctrl: "ctrl"
+          ctrl: "ctrl",
         };
     const modifierStrings = modifiers.reduce(
       (modifierStrings, modifier) =>
@@ -393,7 +393,7 @@
       ["SHIFT", "withShift"],
       ["COMMAND", "withMeta"],
       ["META", "withMeta"],
-      ["CTRL", "withCtrl"]
+      ["CTRL", "withCtrl"],
     ]);
 
     return compositeKeyString.split("-").reduce(
@@ -410,7 +410,7 @@
         withCtrl: false,
         withShift: false,
         withAlt: false,
-        withMeta: false
+        withMeta: false,
       }
     );
   }
@@ -456,7 +456,7 @@
     keyRepeatThread = null;
   }
 
-  const shortcutKeyHandlerKeyUp = keyEvent => {
+  const shortcutKeyHandlerKeyUp = (keyEvent) => {
     if (!shouldKeyRepeated(keyEvent)) return;
     let keyString = keyToString(keyEvent);
     if (keyString === keyRepeatString) {
@@ -472,7 +472,7 @@
     true
   );
 
-  const shortcutKeyHandlerKeyDown = keyEvent => {
+  const shortcutKeyHandlerKeyDown = (keyEvent) => {
     if (gHitHintDisposerInternal) {
       // Hit-Hint mode. Ignore.
       return;
@@ -603,7 +603,7 @@
     );
     editorElement.addEventListener(
       "keydown",
-      keyEvent => {
+      (keyEvent) => {
         if (keyEvent.keyCode === 72 && keyEvent.key === "Backspace") {
           if (inComposition) {
           } else {
@@ -653,12 +653,12 @@
 
     function initializeScrapbox() {
       gRichTextEditorInputElement = document.getElementById("text-input");
-      setupInCompositionHandler(gRichTextEditorInputElement, ev =>
+      setupInCompositionHandler(gRichTextEditorInputElement, (ev) =>
         keysnail.dispatchKey("Backspace")
       );
       // Last URL saver
       let lastUrl = "";
-      const titleObserver = new MutationObserver(records => {
+      const titleObserver = new MutationObserver((records) => {
         for (const record of records) {
           if (lastUrl !== location.href) {
             lastUrl = location.href;
@@ -668,7 +668,7 @@
       });
       const title = document.querySelector("head title");
       titleObserver.observe(title, { childList: true });
-      window.alert = function(msg) {
+      window.alert = function (msg) {
         message(msg);
       };
     }
@@ -703,7 +703,7 @@
       );
       gGoogleDocsEditor.addEventListener(
         "keydown",
-        ev => shortcutKeyHandlerKeyDown(ev),
+        (ev) => shortcutKeyHandlerKeyDown(ev),
         true
       );
     } else {
@@ -728,7 +728,7 @@
       popup.setAttribute("id", "keysnail-popup");
       popup.addEventListener(
         "mousedown",
-        ev => {
+        (ev) => {
           // Events occur in the following order: "mousedown" -> "blur" -> "click"
           // Without the following hack, clicking links in the panel doesn't work
           // because precedent "blur" dispatched `disposer`.
@@ -745,14 +745,14 @@
       queryInput.setAttribute("id", "keysnail-popup-query");
       queryInput.addEventListener(
         "input",
-        ev => {
+        (ev) => {
           this._filterCandidatesByQuery(queryInput.value);
         },
         false
       );
       queryInput.addEventListener(
         "keydown",
-        ev => {
+        (ev) => {
           this._handleKeyEvent(ev);
         },
         false
@@ -868,7 +868,7 @@
 
     _setCandidates(candidates) {
       this._clearCandidates();
-      candidates.forEach(candidate => {
+      candidates.forEach((candidate) => {
         this._addCandidate(candidate.text, candidate.url);
       });
     }
@@ -970,7 +970,7 @@
   }
 
   var keysnail = {
-    setMark: function() {
+    setMark: function () {
       message("Set mark.");
       gStatusMarked = true;
     },
@@ -996,7 +996,7 @@
         fakeOriginal
       );
     },
-    dispatchKeydown: function(
+    dispatchKeydown: function (
       key,
       withShift = false,
       withCtrl = false,
@@ -1013,7 +1013,7 @@
         shiftKey: keepMark && gStatusMarked ? true : withShift,
         ctrlKey: withCtrl,
         altKey: withAlt,
-        metaKey: withCommand
+        metaKey: withCommand,
       };
       if (keyToKeyCode.hasOwnProperty(key)) {
         eventArgs.keyCode = keyToKeyCode[key];
@@ -1034,16 +1034,16 @@
     get hitHintDisposer() {
       return gHitHintDisposerInternal;
     },
-    doubleClick: function() {
+    doubleClick: function () {
       const dclEvent = new MouseEvent("dblclick", {
         bubbles: true,
         cancelable: true,
-        view: window
+        view: window,
       });
       getKeyEventReceiver().dispatchEvent(dclEvent);
     },
-    getSelectedText: function() {
-      let text = (function() {
+    getSelectedText: function () {
+      let text = (function () {
         if (gAceEditor) {
           return gAceEditor.getSelectedText();
         } else if (gCodeMirror) {
@@ -1056,7 +1056,7 @@
       })();
       return text;
     },
-    insertText: function(text, escaped = false) {
+    insertText: function (text, escaped = false) {
       if (escaped) {
         text = unescape(text);
       }
@@ -1071,7 +1071,7 @@
         document.execCommand("insertText", false, text);
       }
     },
-    escape: function() {
+    escape: function () {
       if (gStatusMarked) {
         gStatusMarked = false;
       } else {
@@ -1079,7 +1079,7 @@
         document.documentElement.focus();
       }
     },
-    recenter: function() {
+    recenter: function () {
       if (gAceEditor) {
         gAceEditor.centerSelection();
       } else if (gCodeMirror) {
@@ -1098,31 +1098,31 @@
         );
       }
     },
-    scrollDown: function() {
+    scrollDown: function () {
       window.scrollBy(0, 150);
     },
-    scrollUp: function() {
+    scrollUp: function () {
       window.scrollBy(0, -150);
     },
-    scrollPageDown: function() {
+    scrollPageDown: function () {
       window.scrollBy(0, 500);
     },
-    scrollPageUp: function() {
+    scrollPageUp: function () {
       window.scrollBy(0, -500);
     },
-    back: function() {
+    back: function () {
       history.back();
     },
-    forward: function() {
+    forward: function () {
       history.forward();
     },
-    cursorBottom: function() {
+    cursorBottom: function () {
       window.scrollTo(0, document.body.scrollHeight);
     },
-    cursorTop: function() {
+    cursorTop: function () {
       window.scrollTo(0, 0);
     },
-    focusEditor: function() {
+    focusEditor: function () {
       // insert mode
       if (gGoogleDocsEditor) {
         gGoogleDocsEditor.focus();
@@ -1132,23 +1132,23 @@
         keysnail.focusFirstInput();
       }
     },
-    toggleHitHint: function(newTab) {
+    toggleHitHint: function (newTab) {
       if (keysnail.hitHintDisposer) {
         keysnail.hitHintDisposer();
       } else {
         keysnail.startHitHint(newTab);
       }
     },
-    startHitHint: function(newTab) {
+    startHitHint: function (newTab) {
       return hitHint(null, null, newTab);
     },
-    focusFirstInput: function() {
+    focusFirstInput: function () {
       let elements = Array.from(
         document.querySelectorAll(
           "input[type=text], input[type=search], input[type=password], textarea, textbox"
         )
       );
-      elements.some(element => {
+      elements.some((element) => {
         // Check if the element is visible
         if (element.offsetParent !== null) {
           element.focus();
@@ -1178,26 +1178,26 @@
     startOutlineSelector: () => {
       let elems = Array.from(document.querySelectorAll("h1, h2, h3, h4, h5"));
       keysnail.runPanel(
-        elems.map(e => ({
+        elems.map((e) => ({
           text: e.textContent,
-          url: e.tagName
+          url: e.tagName,
         })),
         {
-          action: index => {
+          action: (index) => {
             elems[index].scrollIntoView({
               behavior: "smooth",
               block: "center",
-              inline: "center"
+              inline: "center",
             });
-          }
+          },
         }
       );
     },
     startSiteSelector: () => {
       keysnail.runPanel(
-        config.sites.map(site => ({
+        config.sites.map((site) => ({
           text: `📖  ${site.alias}`,
-          url: site.url
+          url: site.url,
         })),
         { toggle: true }
       );
@@ -1216,7 +1216,7 @@
       let panel = getPanel();
       panel.run(candidates, options);
     },
-    marked: command => ({ command: command, marked: true }),
+    marked: (command) => ({ command: command, marked: true }),
     searchTextEncoded: async (encodedText, backward) => {
       function updateSearchResultView() {
         let results = keysnail.results;
@@ -1226,13 +1226,13 @@
         }
 
         $notify("updateSearchPositionInfo", {
-          resultText: `${keysnail.currentNodeIndex + 1} / ${results.length}`
+          resultText: `${keysnail.currentNodeIndex + 1} / ${results.length}`,
         });
 
         if (document.querySelectorAll(".keysnail-search-current")) {
           Array.from(
             document.querySelectorAll(".keysnail-search-current")
-          ).forEach(e => e.classList.remove("keysnail-search-current"));
+          ).forEach((e) => e.classList.remove("keysnail-search-current"));
         }
 
         let current = results[keysnail.currentNodeIndex];
@@ -1240,7 +1240,7 @@
         current.scrollIntoView({
           behavior: "smooth",
           block: "center",
-          inline: "center"
+          inline: "center",
         });
       }
 
@@ -1287,7 +1287,7 @@
               done: () => {
                 let results = Array.from(
                   document.querySelectorAll("mark.keysnail-search-results")
-                ).map(e => [e, e.getBoundingClientRect()]);
+                ).map((e) => [e, e.getBoundingClientRect()]);
                 results.sort(([a, aPos], [b, bPos]) => {
                   if (aPos.top < bPos.top) {
                     return -1;
@@ -1303,9 +1303,9 @@
                 // TODO: select result most close to current scrollTop
                 keysnail.currentNodeIndex = 0;
                 updateSearchResultView();
-              }
+              },
             });
-          }
+          },
         });
       }
 
@@ -1314,11 +1314,11 @@
     setScriptLoadedCallback: (src, callback) => {
       scriptLoadedHandlers[src] = callback;
     },
-    notifyScriptLoaded: src => {
+    notifyScriptLoaded: (src) => {
       if (scriptLoadedHandlers.hasOwnProperty(src)) {
         scriptLoadedHandlers[src]();
       }
-    }
+    },
   };
 
   /*@preserve SETTINGS_HERE*/
@@ -1335,7 +1335,7 @@
     all: Object.assign({}, config.globalKeyMap.all),
     view: Object.assign({}, config.globalKeyMap.view),
     rich: Object.assign({}, config.globalKeyMap.rich),
-    edit: Object.assign({}, config.globalKeyMap.edit)
+    edit: Object.assign({}, config.globalKeyMap.edit),
   };
 
   insertStyle(`
