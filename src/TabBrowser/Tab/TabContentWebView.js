@@ -19,7 +19,7 @@ class TabContentWebView extends Component {
     this.eventHandler = {
       log: ({ message }) => {
         if (this.config.DEBUG_CONSOLE) {
-          log(message);
+          console.log(message);
         }
       },
       titleDetermined: ({ title }) => {
