@@ -646,6 +646,10 @@
     }
 
     function initializeScrapbox() {
+      // Dirty hack for mimicking 'non-touchable device (normal Mac)' to Scrapbox
+      // (as of 5/24 2020, it uses `ontouchstart === undefined` to check whether the device is iPadOS or not)
+      Object.defineProperty(document, "ontouchstart", { get: () => void 0 });
+
       gRichTextEditorInputElement = document.getElementById("text-input");
       setupInCompositionHandler(gRichTextEditorInputElement, ev =>
         keysnail.dispatchKey("Backspace")
