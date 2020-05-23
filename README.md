@@ -149,3 +149,15 @@ Parts of iKeySnail are inspired by previous wonderful works (thanks to).
   - <https://scrapbox.io/customize/iPad%E3%81%A8%E5%A4%96%E9%83%A8%E3%82%AD%E3%83%BC%E3%83%9C%E3%83%BC%E3%83%89%E3%81%A7%E7%B7%A8%E9%9B%86%E3%81%A7%E3%81%8D%E3%82%8BScrapbox%E3%81%AE%E3%83%96%E3%83%A9%E3%82%A6%E3%82%B6>
 - Bookmarklet Hit-a-hint @okayu_tar_gz
   - <https://qiita.com/okayu_tar_gz/items/924481d4acf50be37618>
+
+# Releasing (for developers)
+
+## Building a package
+
+    npx webpack --mode=production
+    cd package
+    npx jsbox build
+
+## Releasing a package
+
+    npx release-it
