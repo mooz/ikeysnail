@@ -154,9 +154,9 @@ Parts of iKeySnail are inspired by previous wonderful works (thanks to).
 
 ## Building a package
 
-    npx webpack --mode=production
+    npx webpack-cli --mode=production
     cd package
-    npx jsbox build
+    npx jsbox-cli build
 
 ## Releasing a package
 
