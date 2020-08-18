@@ -46,6 +46,16 @@ See `strings/settings.js` for available shortcuts.
 
 Edit `strings/settings.js`.
 
+### Remote Settings
+
+Tired of manually syncing your config across all of your devices?
+
+Remote settings is your help. Prepare `strings/settings.js` that contains a variable `config.REMOTE_CONFIG_URL` and ikeysnail refers to the specified configuration on the remote server. For example
+```javascript
+config.REMOTE_CONFIG_URL = "https://gist.githubusercontent.com/mooz/676f15e3814751df2e1b67e0b14f5f97/raw/ikeysnail_config.js";
+```
+works.
+
 ### Defining / Customizing Keymap
 
 We have four types of `mode` for key bindings.

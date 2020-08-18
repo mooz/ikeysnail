@@ -116,8 +116,17 @@ const CONFIG_SYSTEM = "settings.default.js";
 const CONFIG_USER = "settings.js";
 const CONFIG_NAMES = [CONFIG_SYSTEM, CONFIG_USER];
 
-function loadConfig() {
-  const config = { sites: [] };
+function asyncRemoteGet(url) {
+  return new Promise(resolve => {
+    $http.get({
+      url: url,
+      handler: ({ data }) => resolve(data)
+    });
+  });
+}
+
+async function loadConfig() {
+  const config = { sites: [], source: "" };
   const keysnail = { marked: () => null };
   const isContent = false;
 
@@ -131,19 +140,27 @@ function loadConfig() {
     );
     if (script) {
       eval(script);
-
+      config.source += "\n" + script;
       console.log("Loading " + fileName + " -> done");
     } else {
       console.log("Loading " + fileName + " -> skipped (not found)");
     }
   }
+  // If remote config url is specified, try to load it
+  if (config.REMOTE_CONFIG_URL) {
+    const remoteConfig = await asyncRemoteGet(config.REMOTE_CONFIG_URL);
+    try {
+      console.log("Remote config found: " + remoteConfig);
+      config.source += "\n" + remoteConfig;
+      eval(remoteConfig);
+    } catch (x) {
+      console.error(x);
+    }
+  }
   return config;
 }
 
-function readUserScript() {
-  let userSettings = CONFIG_NAMES.map(f => readFile(f))
-    .filter(s => !!s)
-    .join("\n");
+function readUserScript(userSettings) {
   let contentScript = readFile("./content-script.js");
   console.log(contentScript);
   let userScript = contentScript.replace(
@@ -745,8 +762,8 @@ ${tab.url}
 }
 
 // Session to start
-function startSession(urlToVisit) {
-  const config = loadConfig();
+async function startSession(urlToVisit) {
+  const config = await loadConfig();
 
   let lastTabs = [];
   let lastTabIndex = 0;
@@ -761,7 +778,7 @@ function startSession(urlToVisit) {
   } catch (x) {}
 
   let browser = new TabBrowser(
-    readUserScript(),
+    readUserScript(config.source),
     browser => {
       browser.history = loadHistory();
 
