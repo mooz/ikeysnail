@@ -1,8 +1,12 @@
 SOURCES = $(shell find src/ -type f -name '*.js')
+PACKAGE = package/.output/ikeysnail.box
 
-package/.output/ikeysnail.box: $(SOURCES)
+.PHONY: package
+package: $(PACKAGE)
+
+$(PACKAGE): $(SOURCES)
 	npx webpack-cli --mode=production
 	cd package; npx jsbox-cli build
 
-# release: package/.output/ikeysnail.box
-# 	npx release-it
+release: $(PACKAGE)
+	npx release-it
