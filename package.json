@@ -25,6 +25,9 @@
             "assets": [
                 "package/.output/ikeysnail.box"
             ]
+        },
+        "npm": {
+          "publish": false
         }
     }
 }
