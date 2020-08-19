@@ -1,6 +1,6 @@
 {
     "name": "ikeysnail",
-    "version": "1.3.2",
+    "version": "1.4.0",
     "description": "Hackable web browser for iOS",
     "main": "main.js",
     "scripts": {
@@ -27,7 +27,7 @@
             ]
         },
         "npm": {
-          "publish": false
+            "publish": false
         }
     }
 }
