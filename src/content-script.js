@@ -819,6 +819,8 @@
       } else if (key === "ArrowDown") {
         this.selectNext();
       } else if (key === "Enter" || key === "ctrl-m") {
+        ev.stopPropagation();
+        ev.preventDefault();
         this.action(this._index);
       }
     }
@@ -959,11 +961,14 @@
         if (options.initialIndex) {
           this._selectCandidateByIndex(options.initialIndex);
         }
+        let originalActiveElement = document.activeElement;
         this.queryInput.focus();
-
         const disposer = () => {
           this.queryInput.removeEventListener("blur", disposer);
           this.exit();
+          if (options.recoverFocus) {
+            originalActiveElement.focus();
+          }
         };
         this.queryInput.addEventListener("blur", disposer);
       }
@@ -1224,7 +1229,7 @@
         prompt: "Evaluate JavaScript (content context)",
       });
     },
-    showKeyHelp: () => {
+    showKeyHelp: (modes = ["all", "view", "rich", "edit"]) => {
       let keys = [];
       function keyMapToArray(keymapName, keymap, prefixKeys = []) {
         for (let key of Object.keys(keymap)) {
@@ -1248,13 +1253,16 @@
           }
         }
       }
-      keyMapToArray("all", config.globalKeyMap.all);
-      keyMapToArray("view", config.globalKeyMap.view);
-      keyMapToArray("edit", config.globalKeyMap.edit);
-      keyMapToArray("rich", config.globalKeyMap.rich);
+      for (let mode of modes) {
+        keyMapToArray(mode, config.globalKeyMap[mode]);
+      }
+      const original = document.activeElement;
       keysnail.runPanel(keys, {
         action: (index) => {
-          keys[index].command();
+          setTimeout(() => {
+            original.focus();
+            keys[index].command();
+          }, 0);
         },
         prompt: "ikeysnail shortcut keys (Selecting a comamnd executes it)",
       });

@@ -54,6 +54,7 @@ if (!isContent) {
 
 config.globalKeyMap = {
   all: {
+    "meta-x": () => keysnail.showKeyHelp(),
     "meta-w": () => keysnail.copyRegion(),
     "ctrl-meta-j": () => $notify("selectNextTab"),
     "ctrl-meta-k": () => $notify("selectPreviousTab"),
@@ -73,6 +74,7 @@ config.globalKeyMap = {
     "ctrl-r": () => $notify("searchText", { backward: true }),
   },
   rich: {
+    "meta-x": () => keysnail.showKeyHelp(["rich", "all"]),
     "ctrl-g": () => keysnail.escape(),
     Escape: () => keysnail.escape(),
     "¥": () => keysnail.insertText("\\"),
@@ -114,6 +116,7 @@ config.globalKeyMap = {
     "ctrl-w": () => keysnail.killRegion(),
   },
   edit: {
+    "meta-x": () => keysnail.showKeyHelp(["edit", "all"]),
     "ctrl-g": () => keysnail.escape(),
     Escape: () => keysnail.escape(),
     "¥": () => keysnail.insertText("\\"),
@@ -263,8 +266,8 @@ config.sites.push({
         keysnail.dispatchKey("alt-shift-ArrowRight");
         keysnail.dispatchKey("Backspace");
       },
-      "ctrl-i": "ctrl-i"
-    }
+      "ctrl-i": "ctrl-i",
+    },
   },
   style: `
 #editor {
