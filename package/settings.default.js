@@ -168,7 +168,7 @@ config.globalKeyMap = {
     "ctrl-b": "ArrowLeft",
     "ctrl-m": "Enter",
     "/": () => $notify("searchText"),
-    "meta-t": () => {
+    "meta-shift-t": () => {
       $notify("createNewTab", {
         url: `https://translate.google.com/translate?hl=auto&sl=auto&&sandbox=1&u=${encodeURIComponent(
           location.href
