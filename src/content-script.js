@@ -45,14 +45,18 @@
     const id = "keysnail-message";
     let messageElement = document.getElementById(id);
     if (!messageElement) {
-      messageElement = document.createElement("pre");
+      messageElement = document.createElement("div");
       messageElement.setAttribute("id", id);
       document.documentElement.appendChild(messageElement);
     } else {
       messageElement.hidden = true;
     }
     if (msg) {
-      messageElement.textContent = msg;
+      if (msg[0] === "<") {
+        messageElement.innerHTML = msg;
+      } else {
+        messageElement.textContent = msg;
+      }
       messageElement.hidden = false;
       messageTimer = setTimeout(() => {
         messageElement.hidden = true;
@@ -474,7 +478,7 @@
 
   function commandToDescription(command) {
     if (command === null) return "Pass through key";
-    if (command.description) {
+    if (command.command) {
       return command.description;
     } else {
       if (typeof command === "object") {
@@ -576,12 +580,11 @@
     if (typeof command === "object") {
       // sub key map
       const prefix = currentKeys.join(" ");
+      const items = Object.keys(command).map(
+        key => `<div><code class="key"><span class="ks-current">${prefix}</span> ${key}</code> <span class="command">${commandToDescription(command[key])}</span></div>`
+      ).join("");
       messageSmall(
-        prefix +
-          "\n" +
-          Object.keys(command)
-            .map((c) => ` ${c} (${commandToDescription(command[c])})`)
-            .join("\n"),
+        `${items}`,
         3000
       );
       subKeyMap = command;
@@ -1264,7 +1267,7 @@
             keys.push({
               html: `<code class="key mode-${keymapName}">${prefixKeys
                 .concat(key)
-                .join(" ")}</code> <span class="command">${description}</pre>`,
+                .join(" ")}</code> <span class="command">${description}</span>`,
               command: entry,
             });
           }
@@ -1522,19 +1525,40 @@
 }
 
 #keysnail-message {
-  background-color: black !important;
+  background-color: white !important;
   opacity: 0.8 !important;
   font-weight: bold !important;
-  color: white !important;
+  color: black !important;
+  border: 1px solid gray !important;
   border-radius: 2px !important;
   padding: 3px 8px !important;
   box-sizing: border-box !important;
   font-family: "menlo" !important;
-  font-size: 18px !important;
+  font-size: 16px !important;
   position: fixed !important;
   z-index: ${Z_INDEX_MAX} !important;
   right: 10px !important;
-  bottom: 10px !important;
+  top: 10px !important;
+  padding: 5px 5px !important;
+}
+#keysnail-message .key {
+  font-family: "menlo" !important;
+  font-weight: bold;
+  color: black !important;
+  border-radius: 4px;
+  padding: 1px 3px;
+  box-shadow: 2px 2px black;
+  border: 1px solid gray;
+  background-color: #EEEEEE;
+}
+#keysnail-message .ks-current {
+  color: #1198CB;
+}
+#keysnial-message .command {
+  padding-left: 0.7em;
+  font-size: large;
+  font-weight: bold;
+  color: rgb(0.9, 0.9, 0.9);
 }
 
 .keysnail-search-current {
