@@ -940,8 +940,15 @@
       }
       this._action = options.action || null;
       this._setCandidates(candidates);
-      this.hintMode = !!options.hints;
+      // Prompt
+      if (options.prompt) {
+        this.queryInput.setAttribute("placeholder", options.prompt);
+      } else {
+        this.queryInput.removeAttribute("placeholder");
+      }
       this.show();
+      // Allow selecting candidates by hints
+      this.hintMode = !!options.hints;
       if (this.hintMode) {
         hitHint(`#keysnail-popup a`, () => {
           this.exit();
@@ -1193,6 +1200,7 @@
               inline: "center",
             });
           },
+          prompt: "Outline",
         }
       );
     },
@@ -1202,7 +1210,7 @@
           text: `📖  ${site.alias}`,
           url: site.url,
         })),
-        { toggle: true }
+        { toggle: true, prompt: "Favorite sites" }
       );
     },
     runEvalConsole: () => {
@@ -1213,6 +1221,7 @@
             message(result + "");
           }
         },
+        prompt: "Evaluate JavaScript (content context)",
       });
     },
     showKeyHelp: () => {
