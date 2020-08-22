@@ -159,6 +159,10 @@ class TabContentWebView extends Component {
     }
   }
 
+  get iconURL() {
+    return `https://www.google.com/s2/favicons?sz=16&domain_url=${encodeURIComponent(this.url)}`;
+  }
+
   get url() {
     let url = null;
     if (this.element) {

@@ -82,6 +82,10 @@
 
   $notify("titleDetermined", { title: document.title });
 
+  function getFaviconURL(siteURL) {
+    return `https://www.google.com/s2/favicons?sz=16&domain_url=${encodeURIComponent(siteURL)}`;
+  }
+
   const config = { sites: [] };
   const Z_INDEX_MAX = 2147483000;
   let gLocalKeyMap = null;
@@ -905,7 +909,11 @@
       let element = document.createElement("a");
       if (candidate.text) {
         element.setAttribute("href", candidate.url || "");
-        element.textContent = candidate.text;
+        if (candidate.icon) {
+          element.innerHTML = `<img src="${candidate.icon}" width="16" height="16"/>&nbsp;${candidate.text}`;
+        } else {
+          element.textContent = candidate.text;
+        }
       } else if (candidate.html) {
         element.innerHTML = candidate.html;
       }
@@ -1232,8 +1240,9 @@
     startSiteSelector: () => {
       keysnail.runPanel(
         config.sites.map((site) => ({
-          text: `📖  ${site.alias}`,
+          text: `${site.alias}`,
           url: site.url,
+          icon: getFaviconURL(site.url)
         })),
         { toggle: true, prompt: "Favorite sites" }
       );

@@ -552,16 +552,13 @@ class TabBrowser extends Component {
   selectTabsByPanel() {
     let candidates = this._tabs.map((tab, index) => ({
       text: tab.title,
-      url: tab.url
+      url: tab.url,
+      icon: tab.iconURL
     }));
-    let initialIndex = this._tabs.indexOf(this.selectedTab);
-    this.selectedTab.evalScript(`
-__keysnail__.runPanel(${JSON.stringify(candidates)}, {
-  toggle: true,
-  initialIndex: ${initialIndex},
-  action: index => $notify("selectTabByIndex", { index })
-});
-        `);
+    let idx = this._tabs.indexOf(this.selectedTab);
+    this.selectedTab.evalScript(`__keysnail__.runPanel(
+${JSON.stringify(candidates)}, { toggle: true, initialIndex: ${idx}, action: index => $notify("selectTabByIndex", { index })}
+)`);
   }
 
   showKeyHelp() {
