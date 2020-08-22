@@ -55,7 +55,6 @@ if (!isContent) {
 config.globalKeyMap = {
   all: {
     "meta-w": () => keysnail.copyRegion(),
-    ":": () => keysnail.runEvalConsole(),
     "ctrl-meta-j": () => $notify("selectNextTab"),
     "ctrl-meta-k": () => $notify("selectPreviousTab"),
     "ctrl-Tab": () => $notify("selectNextTab"),
@@ -126,6 +125,7 @@ config.globalKeyMap = {
     d: {
       d: () => $notify("closeTab"),
     },
+    ":": () => keysnail.runEvalConsole(),
     o: () => $notify("focusLocationBar"),
     "ctrl-a": () => $notify("selectTabsByPanel"),
     E: () => keysnail.toggleHitHint(true),
