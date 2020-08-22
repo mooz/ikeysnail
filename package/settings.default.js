@@ -54,19 +54,46 @@ if (!isContent) {
 
 config.globalKeyMap = {
   all: {
-    "meta-x": () => keysnail.showKeyHelp(),
-    "meta-w": () => keysnail.copyRegion(),
-    "ctrl-meta-j": () => $notify("selectNextTab"),
-    "ctrl-meta-k": () => $notify("selectPreviousTab"),
-    "ctrl-Tab": () => $notify("selectNextTab"),
-    "ctrl-shift-Tab": () => $notify("selectPreviousTab"),
-    "meta-l": () => $notify("focusLocationBar"),
-    "ctrl-l": () => $notify("focusLocationBar"),
-    "meta-t": () => $notify("createNewTab"),
-    "ctrl-t": () => $notify("createNewTab"),
-    "ctrl-meta-g": () => $notify("openClipboardURL"),
+    "meta-x": keysnail.command(
+      () => keysnail.showKeyHelp(),
+      "M-x (Show key help and commands)"
+    ),
+    "meta-w": keysnail.command(
+      () => keysnail.copyRegion(),
+      "Copy selected text"
+    ),
+    "ctrl-meta-j": keysnail.command(
+      () => $notify("selectNextTab"),
+      "Select next tab"
+    ),
+    "ctrl-meta-k": keysnail.command(
+      () => $notify("selectPreviousTab"),
+      "Select previous tab"
+    ),
+    "ctrl-Tab": keysnail.command(
+      () => $notify("selectNextTab"),
+      "Select next tab"
+    ),
+    "ctrl-shift-Tab": keysnail.command(
+      () => $notify("selectPreviousTab"),
+      "Select previous tab"
+    ),
+    "meta-l": keysnail.command(
+      () => $notify("focusLocationBar"),
+      "description"
+    ),
+    "ctrl-l": keysnail.command(
+      () => $notify("focusLocationBar"),
+      "description"
+    ),
+    "meta-t": keysnail.command(() => $notify("createNewTab"), "description"),
+    "ctrl-t": keysnail.command(() => $notify("createNewTab"), "description"),
+    "ctrl-meta-g": keysnail.command(
+      () => $notify("openClipboardURL"),
+      "description"
+    ),
     "ctrl-x": {
-      k: () => $notify("closeTab"),
+      k: keysnail.command(() => $notify("closeTab"), "description"),
       u: "meta-z",
     },
     "meta-f": () => $notify("searchText"),

@@ -45,7 +45,7 @@
     const id = "keysnail-message";
     let messageElement = document.getElementById(id);
     if (!messageElement) {
-      messageElement = document.createElement("span");
+      messageElement = document.createElement("pre");
       messageElement.setAttribute("id", id);
       document.documentElement.appendChild(messageElement);
     } else {
@@ -472,6 +472,18 @@
     true
   );
 
+  function commandToDescription(command) {
+    if (command === null) return "Pass through key";
+    if (command.description) {
+      return command.description;
+    } else {
+      if (typeof command === "object") {
+        return "Sub keymap";
+      }
+      return command + "";
+    }
+  }
+
   const shortcutKeyHandlerKeyDown = (keyEvent) => {
     if (gHitHintDisposerInternal) {
       // Hit-Hint mode. Ignore.
@@ -555,16 +567,21 @@
     keyEvent.stopPropagation();
     keyEvent.preventDefault();
 
-    // `key: XXX` is abbreviation of `key: { command: XXX, marked: false }`
-    if (command.command) {
+    if (typeof command === "object" && command.command) {
+      // Unwrap { command, marked: false, description } into `command`
       keepMark = !!command.marked;
       command = command.command;
     }
 
     if (typeof command === "object") {
       // sub key map
+      const prefix = currentKeys.join(" ");
       messageSmall(
-        currentKeys.join(",") + " → {" + Object.keys(command).join(",") + "}",
+        prefix +
+          "\n" +
+          Object.keys(command)
+            .map((c) => ` ${c} (${commandToDescription(command[c])})`)
+            .join("\n"),
         3000
       );
       subKeyMap = command;
@@ -1271,7 +1288,12 @@
       let panel = getPanel();
       panel.run(candidates, options);
     },
-    marked: (command) => ({ command: command, marked: true }),
+    marked: (command, description = null) => ({
+      command,
+      marked: true,
+      description,
+    }),
+    command: (command, description = null) => ({ command, description }),
     searchTextEncoded: async (encodedText, backward) => {
       function updateSearchResultView() {
         let results = keysnail.results;
@@ -1498,6 +1520,7 @@
 
 #keysnail-message {
   background-color: black !important;
+  opacity: 0.8 !important;
   font-weight: bold !important;
   color: white !important;
   border-radius: 2px !important;
