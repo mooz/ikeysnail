@@ -1504,6 +1504,9 @@
 
 #keysnail-popup a .command {
   padding-left: 0.7em;
+  font-size: large;
+  font-weight: bold;
+  color: rgb(0.9, 0.9, 0.9);
 }
 
 .keysnail-hint {
