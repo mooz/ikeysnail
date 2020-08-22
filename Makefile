@@ -1,4 +1,4 @@
-SOURCES = $(shell find src/ -type f -name '*.js')
+SOURCES = $(shell find src/ -type f -name '*.js') package/settings.default.js
 PACKAGE = package/.output/ikeysnail.box
 
 .PHONY: package

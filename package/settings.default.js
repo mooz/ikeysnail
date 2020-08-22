@@ -262,8 +262,7 @@ config.sites.push({
         keysnail.dispatchKey("alt-shift-ArrowRight");
         keysnail.dispatchKey("Backspace");
       },
-      "ctrl-i": "ctrl-i",
-      "ctrl-t": "ctrl-t"
+      "ctrl-i": "ctrl-i"
     }
   },
   style: `
