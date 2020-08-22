@@ -190,6 +190,10 @@ class TabContentWebView extends Component {
     evalScript(this, "__keysnail__.startSiteSelector(true)");
   }
 
+  showKeyHelp() {
+    evalScript(this, "__keysnail__.startShortcutKeyHelpSelector()");
+  }
+
   async searchText(text, backward = false) {
     await evalScript(
       this,

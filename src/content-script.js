@@ -800,10 +800,11 @@
 
     match(queries, candidate) {
       if (this._matchType === "and") {
-        let text = candidate.textContent.toLowerCase();
-        let url = (candidate.href || "").toLowerCase();
+        let text =
+          candidate.textContent.toLowerCase() +
+          (candidate.href || "").toLowerCase();
         for (let query of queries) {
-          if (text.indexOf(query) < 0 && text.indexOf(url)) {
+          if (text.indexOf(query) < 0) {
             return false;
           }
         }
@@ -868,9 +869,7 @@
 
     _setCandidates(candidates) {
       this._clearCandidates();
-      candidates.forEach((candidate) => {
-        this._addCandidate(candidate.text, candidate.url);
-      });
+      candidates.forEach((candidate) => this._addCandidate(candidate));
     }
 
     _clearCandidates() {
@@ -880,11 +879,15 @@
       this._filteredCandidates = [];
     }
 
-    _addCandidate(text, url) {
-      let link = document.createElement("a");
-      link.setAttribute("href", url);
-      link.textContent = text;
-      this.candidateList.appendChild(link);
+    _addCandidate(candidate) {
+      let element = document.createElement("a");
+      if (candidate.text) {
+        element.setAttribute("href", candidate.url || "");
+        element.textContent = candidate.text;
+      } else if (candidate.html) {
+        element.innerHTML = candidate.html;
+      }
+      this.candidateList.appendChild(element);
     }
 
     _selectCandidateByIndex(indexToSelect) {
@@ -1212,6 +1215,41 @@
         },
       });
     },
+    showKeyHelp: () => {
+      let keys = [];
+      function keyMapToArray(keymapName, keymap, prefixKeys = []) {
+        for (let key of Object.keys(keymap)) {
+          let entry = keymap[key];
+          if (entry === null) continue;
+
+          if (entry.command) {
+            entry = entry.command;
+          }
+          if (entry && typeof entry === "object") {
+            // Intermediate node
+            keyMapToArray(keymapName, entry, prefixKeys.concat(key));
+          } else {
+            // Leaf
+            keys.push({
+              html: `<code class="key mode-${keymapName}">${prefixKeys
+                .concat(key)
+                .join(" ")}</code> <span class="command">${entry}</pre>`,
+              command: entry,
+            });
+          }
+        }
+      }
+      keyMapToArray("all", config.globalKeyMap.all);
+      keyMapToArray("view", config.globalKeyMap.view);
+      keyMapToArray("edit", config.globalKeyMap.edit);
+      keyMapToArray("rich", config.globalKeyMap.rich);
+      keysnail.runPanel(keys, {
+        action: (index) => {
+          keys[index].command();
+        },
+        prompt: "ikeysnail shortcut keys (Selecting a comamnd executes it)",
+      });
+    },
     runPanel: (candidates, options) => {
       let panel = getPanel();
       panel.run(candidates, options);
@@ -1340,29 +1378,29 @@
 
   insertStyle(`
 #keysnail-popup * {
-   box-sizing: border-box;
-   font-family: -apple-system !important;
-   font-size: 15px !important;
+  box-sizing: border-box;
+  font-family: -apple-system !important;
+  font-size: 15px !important;
 }
 #keysnail-popup {
-     display: flex !important;
-     flex-direction: column !important;
-     box-shadow: 0px 2px 5px rgba(0,0,0,0.8) !important;
-     position: fixed !important;
-     top: 5% !important;
-     left: 10% !important;
-     padding: 10px !important;
-     width: 80% !important;
-     height: 80% !important;
-     background: white !important;
-     opacity: 0.95 !important;
-     border: 1px solid rgba(0,0,0,0.5) !important;
-     border-radius: 1ex !important;
-     z-index: ${Z_INDEX_MAX - 10} !important;
-     text-overflow: ellipsis !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-shadow: 0px 2px 5px rgba(0,0,0,0.8) !important;
+  position: fixed !important;
+  top: 5% !important;
+  left: 10% !important;
+  padding: 10px !important;
+  width: 80% !important;
+  height: 80% !important;
+  background: white !important;
+  opacity: 0.95 !important;
+  border: 1px solid rgba(0,0,0,0.5) !important;
+  border-radius: 1ex !important;
+  z-index: ${Z_INDEX_MAX - 10} !important;
+  text-overflow: ellipsis !important;
 }
 #keysnail-popup.hidden {
-     display: none !important;
+  display: none !important;
 }
 .hint-mode #keysnail-popup-query {
   display: none !important;
@@ -1372,68 +1410,88 @@
   height: 100% !important;
 }
 #keysnail-popup-query {
-     width: 100%;
-     margin: 0 0 1em 0;
-     padding: 5px;
-     color: black;
-     border: 0px !important;
-     border-radius: 3px;
-     font-size: 16px;
-     outline: none !important;
-     background-color: rgba(0,0,0,0.05);
- }
+  width: 100%;
+  margin: 0 0 1em 0;
+  padding: 5px;
+  color: black;
+  border: 0px !important;
+  border-radius: 3px;
+  font-size: 16px;
+  outline: none !important;
+  background-color: rgba(0,0,0,0.05);
+}
 
- #keysnail-popup a {
-     display: none;
-     color: black !important;
-     padding: 0.5em 2em !important;
-     border-bottom: 1px solid rgba(0,0,0,0.3) !important;
-     text-overflow: ellipsis;
-     overflow: hidden;
- }
-
+#keysnail-popup a {
+  display: none;
+  color: black !important;
+  padding: 0.4em 2em !important;
+  border-bottom: 1px solid rgba(0,0,0,0.3) !important;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
 #keysnail-popup a:after {
-     content: attr(href);
-     display: block;
-     font-size: 12px;
-     text-overflow: ellipsis;
-     overflow: hidden;
-     color: rgba(0,0,0,0.7);
- }
+  content: attr(href);
+  display: block;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  color: rgba(0,0,0,0.7);
+}
+#keysnail-popup a.matched {
+  display: block !important;
+}
+#keysnail-popup a.selected {
+  background-color: rgba(0,0,0,0.15);
+}
+#keysnail-popup a .key {
+  font-family: "menlo" !important;
+  font-weight: bold;
+  color: white !important;
+  border-radius: 4px;
+  padding: 1px 3px;
+  box-shadow: 2px 2px black;
+  border: 1px solid gray;
+}
+#keysnail-popup a .key.mode-all  { background-color: #1198CB; }
+#keysnail-popup a .key.mode-view { background-color: #00A14E; }
+#keysnail-popup a .key.mode-edit { background-color: #FF7400; }
+#keysnail-popup a .key.mode-rich { background-color: #EC3C37; }
+/*
+#keysnail-popup a .key.mode-all:before  { content: "(ALL)";  }
+#keysnail-popup a .key.mode-view:before { content: "(VIEW)"; }
+#keysnail-popup a .key.mode-edit:before { content: "(EDIT)"; }
+#keysnail-popup a .key.mode-rich:before { content: "(RICH)"; }
+*/
 
- #keysnail-popup a.matched {
-     display: block !important;
- }
-
- #keysnail-popup a.selected {
-     background-color: rgba(0,0,0,0.15);
- }
+#keysnail-popup a .command {
+  padding-left: 0.7em;
+}
 
 .keysnail-hint {
-        background-color: yellow !important;
-        color: black !important;
-        box-sizing: border-box;
-        font-family: "menlo" !important;
-        font-size: 15px !important;
-        padding: 2px !important;
-        position: fixed !important;
-        opacity: 0.8;
-        z-index: ${Z_INDEX_MAX};
+  background-color: yellow !important;
+  color: black !important;
+  box-sizing: border-box;
+  font-family: "menlo" !important;
+  font-size: 15px !important;
+  padding: 2px !important;
+  position: fixed !important;
+  opacity: 0.8;
+  z-index: ${Z_INDEX_MAX};
 }
 
 #keysnail-message {
-   background-color: black !important;
-   font-weight: bold !important;
-   color: white !important;
-   border-radius: 2px !important;
-   padding: 3px 8px !important;
-   box-sizing: border-box !important;
-   font-family: "menlo" !important;
-   font-size: 18px !important;
-   position: fixed !important;
-   z-index: ${Z_INDEX_MAX} !important;
-   right: 10px !important;
-   top: 10px !important;
+  background-color: black !important;
+  font-weight: bold !important;
+  color: white !important;
+  border-radius: 2px !important;
+  padding: 3px 8px !important;
+  box-sizing: border-box !important;
+  font-family: "menlo" !important;
+  font-size: 18px !important;
+  position: fixed !important;
+  z-index: ${Z_INDEX_MAX} !important;
+  right: 10px !important;
+  bottom: 10px !important;
 }
 
 .keysnail-search-current {

@@ -416,6 +416,9 @@ class TabBrowser extends Component {
 
     rightToolBar
       .addChild(
+        new ToolBarButton("questionmark.circle", () => this.showKeyHelp())
+      )
+      .addChild(
         new ToolBarButton("rectangle.on.rectangle", () =>
           this.selectTabsByPanel()
         )
@@ -559,6 +562,10 @@ __keysnail__.runPanel(${JSON.stringify(candidates)}, {
   action: index => $notify("selectTabByIndex", { index })
 });
         `);
+  }
+
+  showKeyHelp() {
+    this.selectedTab.showKeyHelp();
   }
 
   onTabStartLoading(tab) {
