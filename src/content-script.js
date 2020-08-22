@@ -1252,7 +1252,7 @@
         for (let key of Object.keys(keymap)) {
           let entry = keymap[key];
           if (entry === null) continue;
-
+          const description = commandToDescription(entry);
           if (entry.command) {
             entry = entry.command;
           }
@@ -1264,7 +1264,7 @@
             keys.push({
               html: `<code class="key mode-${keymapName}">${prefixKeys
                 .concat(key)
-                .join(" ")}</code> <span class="command">${entry}</pre>`,
+                .join(" ")}</code> <span class="command">${description}</pre>`,
               command: entry,
             });
           }
