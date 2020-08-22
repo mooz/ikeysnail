@@ -54,7 +54,7 @@
     if (msg) {
       messageElement.textContent = msg;
       messageElement.hidden = false;
-      setTimeout(() => {
+      messageTimer = setTimeout(() => {
         messageElement.hidden = true;
       }, duration || 3000);
     }
