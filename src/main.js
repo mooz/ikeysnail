@@ -127,7 +127,7 @@ function asyncRemoteGet(url) {
 
 async function loadConfig() {
   const config = { sites: [], source: "" };
-  const keysnail = { marked: () => null };
+  const keysnail = { marked: () => null, command: () => null};
   const isContent = false;
 
   for (let fileName of CONFIG_NAMES) {
