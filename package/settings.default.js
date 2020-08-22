@@ -122,6 +122,7 @@ config.globalKeyMap = {
     "meta-f": null,
   },
   view: {
+    "?": () => keysnail.showKeyHelp(),
     d: {
       d: () => $notify("closeTab"),
     },
