@@ -32,9 +32,7 @@ from iOS Safari. Then JSBox will install iKeySnail.
 
 You can also manually build the package and install it in JSBox:
 
-    npx webpack --mode=production
-    cd package
-    npx jsbox build
+    make package
     
 then copy `.output/ikeysnail.box` to your JSBox app.
 
@@ -164,10 +162,8 @@ Parts of iKeySnail are inspired by previous wonderful works (thanks to).
 
 ## Building a package
 
-    npx webpack-cli --mode=production
-    cd package
-    npx jsbox-cli build
+    make package
 
 ## Releasing a package
 
-    npx release-it
+    make release
