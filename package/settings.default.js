@@ -187,6 +187,10 @@ config.globalKeyMap = {
     F: keysnail.command(() => keysnail.forward(), "History forward"),
     L: keysnail.command(() => keysnail.forward(), "History backward"),
     f: keysnail.command(() => keysnail.focusFirstInput(), "Focus to the first input"),
+    a: {
+      a: keysnail.command(() => $notify("scrap"), "Scrap this page (Scrapbox)"),
+      n: keysnail.command(() => $notify("gotoDailyNote"), "Goto daily note (Scrapbox)"),
+    },
     g: {
       g: keysnail.command(() => keysnail.cursorTop(), "Goto the beginning of the page"),
       i: keysnail.command(() => keysnail.focusFirstInput(), "Focus to the first input"),

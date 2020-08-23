@@ -52,6 +52,7 @@ class TabContentWebView extends Component {
       exitApplication: () => $app.close(),
       share: () => this.browser.share(),
       scrap: () => this.browser.scrap(),
+      gotoDailyNote: () => this.browser.gotoDailyNote(),
       message: ({ message, duration }) => {
         $ui.toast(message, duration || 3);
       },

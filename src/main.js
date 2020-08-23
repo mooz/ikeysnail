@@ -621,12 +621,15 @@ ${JSON.stringify(candidates)}, { toggle: true, initialIndex: ${idx}, action: ind
     return `${todayYear}-${todayMonth}-${todayDate}`;
   }
 
+  gotoDailyNote() {
     if (!this.config.SCRAPBOX_USER) {
       $ui.toast(
         `Specify Scrapbox user in settings.js: config.SCRAPBOX_USER = 'XXX';`
       );
       return;
     }
+    this.visitURL(`https://scrapbox.io/${this.config.SCRAPBOX_USER}/${this._getTodayString()}`);
+  }
 
   scrap() {
     if (!this.config.SCRAPBOX_USER) {
