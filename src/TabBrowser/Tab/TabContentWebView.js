@@ -161,7 +161,7 @@ class TabContentWebView extends Component {
   }
 
   get iconURL() {
-    return `https://www.google.com/s2/favicons?sz=16&domain_url=${encodeURIComponent(this.url)}`;
+    return `https://cdn-ak.favicon.st-hatena.com/?url=${encodeURIComponent(this.url)}`;
   }
 
   get url() {

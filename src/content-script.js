@@ -37,7 +37,7 @@
     return;
   }
 
-  function messageSmall(msg, duration) {
+  function showFloatingMessage(msg, duration) {
     if (messageTimer) {
       clearTimeout(messageTimer);
       messageTimer = null;
@@ -83,7 +83,7 @@
   $notify("titleDetermined", { title: document.title });
 
   function getFaviconURL(siteURL) {
-    return `https://www.google.com/s2/favicons?sz=16&domain_url=${encodeURIComponent(siteURL)}`;
+    return `https://cdn-ak.favicon.st-hatena.com/?url=${encodeURIComponent(siteURL)}`;
   }
 
   const config = { sites: [] };
@@ -568,7 +568,7 @@
     );
     if (!command) {
       // Not found. Reset.
-      messageSmall(null);
+      showFloatingMessage(null);
       return resetKeyStatus();
     }
 
@@ -585,15 +585,15 @@
       // sub key map
       const prefix = currentKeys.join(" ");
       const items = Object.keys(command).map(
-        key => `<div><code class="key"><span class="ks-current">${prefix}</span> ${key}</code> <span class="command">${commandToDescription(command[key])}</span></div>`
+        key => `<div class="ks-key-entry"><code class="key"><span class="ks-current">${prefix}</span>${key}</code> <span class="ks-command">${commandToDescription(command[key])}</span></div>`
       ).join("");
-      messageSmall(
+      showFloatingMessage(
         `${items}`,
         3000
       );
       subKeyMap = command;
     } else {
-      messageSmall(null);
+      showFloatingMessage(null);
       resetKeyStatus();
       if (typeof command === "function") {
         // Exec function
@@ -1432,6 +1432,7 @@
   box-sizing: border-box;
   font-family: -apple-system !important;
   font-size: 15px !important;
+  font-weight: normal !important;
 }
 #keysnail-popup {
   display: flex !important;
@@ -1475,7 +1476,7 @@
 #keysnail-popup a {
   display: none;
   color: black !important;
-  padding: 0.4em 2em !important;
+  padding: 0.4em 0.5em !important;
   border-bottom: 1px solid rgba(0,0,0,0.3) !important;
   text-overflow: ellipsis;
   overflow: hidden;
@@ -1496,7 +1497,7 @@
 }
 #keysnail-popup a .key {
   font-family: "menlo" !important;
-  font-weight: bold;
+  font-weight: bold !important;
   color: white !important;
   border-radius: 4px;
   padding: 1px 3px;
@@ -1507,12 +1508,11 @@
 #keysnail-popup a .key.mode-view { background-color: #00A14E; }
 #keysnail-popup a .key.mode-edit { background-color: #FF7400; }
 #keysnail-popup a .key.mode-rich { background-color: #EC3C37; }
-/*
-#keysnail-popup a .key.mode-all:before  { content: "(ALL)";  }
-#keysnail-popup a .key.mode-view:before { content: "(VIEW)"; }
-#keysnail-popup a .key.mode-edit:before { content: "(EDIT)"; }
-#keysnail-popup a .key.mode-rich:before { content: "(RICH)"; }
-*/
+
+#keysnail-popup a .key.mode-all:before  { content: "(ALL) ";  }
+#keysnail-popup a .key.mode-view:before { content: "(VIEW) "; }
+#keysnail-popup a .key.mode-edit:before { content: "(EDIT) "; }
+#keysnail-popup a .key.mode-rich:before { content: "(RICH) "; }
 
 #keysnail-popup a .command {
   padding-left: 0.7em;
@@ -1534,21 +1534,24 @@
 }
 
 #keysnail-message {
+  font-family: -apple-system !important;
   background-color: white !important;
-  opacity: 0.8 !important;
-  font-weight: bold !important;
+  opacity: 0.95 !important;
   color: black !important;
   border: 1px solid gray !important;
   border-radius: 2px !important;
   padding: 3px 8px !important;
   box-sizing: border-box !important;
-  font-family: "menlo" !important;
   font-size: 16px !important;
   position: fixed !important;
   z-index: ${Z_INDEX_MAX} !important;
   right: 10px !important;
   top: 10px !important;
   padding: 5px 5px !important;
+}
+#keysnail-message .ks-key-entry {
+  border-bottom: 1px solid gray;
+  padding: 4px 0px;
 }
 #keysnail-message .key {
   font-family: "menlo" !important;
@@ -1563,7 +1566,7 @@
 #keysnail-message .ks-current {
   color: #1198CB;
 }
-#keysnial-message .command {
+#keysnial-message .ks-command {
   padding-left: 0.7em;
   font-size: large;
   font-weight: bold;
