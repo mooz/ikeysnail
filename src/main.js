@@ -13,11 +13,8 @@ const {
 const { TabListHorizontal } = require("TabBrowser/TabList");
 const { TabListVertical } = require("TabBrowser/TabList");
 
-function readFile(file, initialContent = null) {
+function readFile(file, initialContent = "") {
   if (!$file.exists(file)) {
-    if (!initialContent) {
-      throw file + " not found and initial content isn't specified";
-    }
     $file.write({
       data: $data({
         string: initialContent
@@ -112,9 +109,27 @@ function saveHistory(browser) {
 // User script
 // ----------------------------------------------------------- //
 
-const CONFIG_SYSTEM = "settings.default.js";
-const CONFIG_USER = "settings.js";
-const CONFIG_NAMES = [CONFIG_SYSTEM, CONFIG_USER];
+const CONFIG = {
+  SYSTEM: {
+    path: "settings.default.js",
+    template: ``,
+  },
+  USER: {
+    path: "settings.js",
+    template: `// Put your configurations here.
+// NOTE: Don't use settings.default.js for storing your config
+//       since the file will be overridden by the system.
+`
+  },
+  REMOTE: {
+    path: "settings.remote.js",
+    template: ``,
+  },
+};
+// const CONFIG_SYSTEM = "settings.default.js";
+// const CONFIG_REMOTE_CACHE = "settings.remote.js";
+// const CONFIG_USER = "settings.js";
+// const CONFIG_NAMES = [CONFIG_SYSTEM, CONFIG_USER, CONFIG_REMOTE_CACHE];
 
 function asyncRemoteGet(url) {
   return new Promise(resolve => {
@@ -126,35 +141,17 @@ function asyncRemoteGet(url) {
 }
 
 async function loadConfig() {
-  const config = { sites: [], source: "" };
+  const config = { sites: [], sources: {} };
   const keysnail = { marked: () => null, command: () => null};
   const isContent = false;
-
-  for (let fileName of CONFIG_NAMES) {
-    let script = readFile(
-      fileName,
-      fileName === CONFIG_USER
-        ? `// Put your configuration here. See ${CONFIG_SYSTEM} for configuration items.
-`
-        : null
-    );
+  for (let configName of Object.keys(CONFIG)) {
+    let script = readFile(CONFIG[configName].path, CONFIG[configName].template);
     if (script) {
       eval(script);
-      config.source += "\n" + script;
-      console.log("Loading " + fileName + " -> done");
+      config.sources[configName] = script;
+      console.log("Loading " + CONFIG[configName].path + " -> done");
     } else {
-      console.log("Loading " + fileName + " -> skipped (not found)");
-    }
-  }
-  // If remote config url is specified, try to load it
-  if (config.REMOTE_CONFIG_URL) {
-    const remoteConfig = await asyncRemoteGet(config.REMOTE_CONFIG_URL);
-    try {
-      console.log("Remote config found: " + remoteConfig);
-      config.source += "\n" + remoteConfig;
-      eval(remoteConfig);
-    } catch (x) {
-      console.error(x);
+      console.log("Loading " + CONFIG[configName].path + " -> skipped (not found or empty)");
     }
   }
   return config;
@@ -784,58 +781,82 @@ ${tab.url}
 
 // Session to start
 async function startSession(urlToVisit) {
-  const config = await loadConfig();
-
-  let lastTabs = [];
-  let lastTabIndex = 0;
-  let tabTitles = null;
   try {
-    let [tabUrls, tabIndex, tabTitles] = loadTabInfo();
-    lastTabIndex = tabIndex;
-    tabTitles = tabTitles || [];
-    for (let i = 0; i < tabUrls.length; ++i) {
-      lastTabs.push({ url: tabUrls[i], title: tabTitles[i] });
-    }
-  } catch (x) {}
+    const config = await loadConfig();
 
-  let browser = new TabBrowser(
-    readUserScript(config.source),
-    browser => {
-      browser.history = loadHistory();
-
-      if (lastTabs.length) {
-        browser.createNewTabs(
-          lastTabs.map(t => t.url),
-          lastTabIndex,
-          lastTabs.map(t => t.title)
-        );
-        if (urlToVisit) {
-          browser.createNewTab(urlToVisit, true);
-        } else {
-          browser.selectTab(lastTabIndex);
-        }
-      } else {
-        browser.createNewTab(urlToVisit || config.NEW_TAB_URL, true);
+    let lastTabs = [];
+    let lastTabIndex = 0;
+    let tabTitles = null;
+    try {
+      let [tabUrls, tabIndex, tabTitles] = loadTabInfo();
+      lastTabIndex = tabIndex;
+      tabTitles = tabTitles || [];
+      for (let i = 0; i < tabUrls.length; ++i) {
+        lastTabs.push({ url: tabUrls[i], title: tabTitles[i] });
       }
-    },
-    config
-  );
+    } catch (x) {}
 
-  const shortcutKeyDeactivator = new ShortcutKeyDeactivator();
-  const systemKeyHandler = new SystemKeyHandler(browser, config);
+    let browser = new TabBrowser(
+      readUserScript(Object.values(config.sources).join("\n")),
+      browser => {
+        browser.history = loadHistory();
 
-  $app.listen({
-    ready: () => {
-      shortcutKeyDeactivator.onReady();
-      systemKeyHandler.onReady();
-    },
-    exit: () => {
-      shortcutKeyDeactivator.onExit();
-      systemKeyHandler.onExit();
-      saveTabInfo(browser);
-      saveHistory(browser);
+        if (lastTabs.length) {
+          browser.createNewTabs(
+            lastTabs.map(t => t.url),
+            lastTabIndex,
+            lastTabs.map(t => t.title)
+          );
+          if (urlToVisit) {
+            browser.createNewTab(urlToVisit, true);
+          } else {
+            browser.selectTab(lastTabIndex);
+          }
+        } else {
+          browser.createNewTab(urlToVisit || config.NEW_TAB_URL, true);
+        }
+      },
+      config
+    );
+
+    const shortcutKeyDeactivator = new ShortcutKeyDeactivator();
+    const systemKeyHandler = new SystemKeyHandler(browser, config);
+
+    $app.listen({
+      ready: () => {
+        shortcutKeyDeactivator.onReady();
+        systemKeyHandler.onReady();
+      },
+      exit: () => {
+        shortcutKeyDeactivator.onExit();
+        systemKeyHandler.onExit();
+        saveTabInfo(browser);
+        saveHistory(browser);
+      }
+    });
+
+    // If remote config url is specified, compare it with the cache
+    if (config.REMOTE_CONFIG_URL) {
+      console.log("Remote config found");
+      const remoteConfig = await asyncRemoteGet(config.REMOTE_CONFIG_URL);
+      console.log("Remote config found. Let's compare.");
+      if (remoteConfig !== config.sources.REMOTE) {
+        // Update cache
+        $file.write({
+          data: $data({ string: remoteConfig }),
+          path: CONFIG.REMOTE.path
+        });
+        $ui.alert("Detected remote config (updates). Please restart your ikeysnail app.");
+        $app.close();
+      } else {
+        console.log("Config already cached");
+      }
     }
-  });
+
+  } catch (x) {
+    console.error("Error in launching procedure");
+    console.error(x);
+  }
 }
 
 /* $app.keyboardToolbarEnabled = false; */
