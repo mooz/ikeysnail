@@ -613,7 +613,14 @@ ${JSON.stringify(candidates)}, { toggle: true, initialIndex: ${idx}, action: ind
     $share.sheet([tab.url, tab.title]);
   }
 
-  scrap() {
+  _getTodayString() {
+    const d = new Date();
+    const todayDate = ('0' + d.getDate()).slice(-2);
+    const todayMonth = ('0' + (d.getMonth() + 1)).slice(-2);
+    const todayYear = d.getFullYear();
+    return `${todayYear}-${todayMonth}-${todayDate}`;
+  }
+
     if (!this.config.SCRAPBOX_USER) {
       $ui.toast(
         `Specify Scrapbox user in settings.js: config.SCRAPBOX_USER = 'XXX';`
@@ -621,8 +628,15 @@ ${JSON.stringify(candidates)}, { toggle: true, initialIndex: ${idx}, action: ind
       return;
     }
 
+  scrap() {
+    if (!this.config.SCRAPBOX_USER) {
+      $ui.toast(
+        `Specify Scrapbox user in settings.js: config.SCRAPBOX_USER = 'XXX';`
+      );
+      return;
+    }
     let tab = this.selectedTab;
-    let content = `#bookmark
+    let content = `#bookmark #${this._getTodayString()}
 
 ${tab.url}
 `;
