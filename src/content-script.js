@@ -423,6 +423,12 @@
     );
   }
 
+  function inNativeEditor() {
+    const elem = document.activeElement;
+    const tag = elem.tagName;
+    return tag === "TEXTAREA" || tag === "INPUT";
+  }
+
   function inEditorLikeMode() {
     let elem = document.activeElement;
     let tag = elem.tagName;
@@ -1202,15 +1208,29 @@
     paste: () => {
       $notify("paste");
     },
+    deleteSelection: () => {
+      if (inNativeEditor()) {
+        document.execCommand("delete");
+      } else {
+        keysnail.dispatchKey("Backspace");
+      }
+    },
+    selectToEndOfLine: () => {
+      if (inNativeEditor()) {
+        document.activeElement.selectionEnd = document.activeElement.value.length;
+      } else {
+        keysnail.dispatchKey("shift-End");
+      }
+    },
     killLine: () => {
-      keysnail.dispatchKey("shift-End");
+      keysnail.selectToEndOfLine();
       let text = keysnail.getSelectedText();
-      keysnail.dispatchKey("Backspace");
+      keysnail.deleteSelection();
       $notify("copyText", { text });
     },
     killRegion: () => {
       const text = keysnail.getSelectedText();
-      keysnail.dispatchKey("Backspace");
+      keysnail.deleteSelection();
       $notify("copyText", { text });
     },
     copyRegion: () => {

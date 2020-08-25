@@ -144,10 +144,12 @@ config.globalKeyMap = {
     "ctrl-w": keysnail.command(() => keysnail.killRegion(), "Kill region"),
   },
   edit: {
-    "meta-x": keysnail.command(() => keysnail.showKeyHelp(["edit", "all"]), "M-x"),
+    // "meta-x": keysnail.command(() => keysnail.showKeyHelp(["edit", "all"]), "M-x"),
     "ctrl-g": keysnail.command(() => keysnail.escape(), "Cancel (Quit key)"),
     Escape: keysnail.command(() => keysnail.escape(), "Escape"),
     "¥": keysnail.command(() => keysnail.insertText("\\"), "Insert backslash"),
+    "ctrl-k": keysnail.command(() => keysnail.killLine(), "Kill line"),
+    "ctrl-w": keysnail.command(() => keysnail.killRegion(), "Kill region"),
     "ctrl-p": "ArrowUp",
     "ctrl-n": "ArrowDown",
     "meta-f": null,
