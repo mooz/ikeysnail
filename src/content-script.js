@@ -603,7 +603,7 @@
       resetKeyStatus();
       if (typeof command === "function") {
         // Exec function
-        command.call(keysnail);
+        command.call(keysnail, keepMark);
       } else if (typeof command === "string") {
         keysnail.dispatchKey(command, keepMark);
       }
