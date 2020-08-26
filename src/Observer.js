@@ -90,6 +90,20 @@ export class SystemKeyHandler extends Observer {
       events: {
         // Swizzling handleKeyUIEvent doesn't work. We need to swizzle the private one (_handleXXX).
         "_handleKeyUIEvent:": evt => {
+          // https://developer.limneos.net/?ios=11.1.2&framework=UIKit.framework&header=UIPhysicalKeyboardEvent.h
+          // console.log(evt);
+          // console.log("commandModifiedInput: " + evt.$__commandModifiedInput());
+          // console.log("gsModifierFlags: " + evt.$__gsModifierFlags());
+          // console.log("inputFlags: " + evt.$__inputFlags());
+          // console.log("isKeyDown: " + evt.$__isKeyDown());
+          // console.log("keyCode: " + evt.$__keyCode());
+          // console.log("markedInput: " + evt.$__markedInput());
+          // console.log("modifiedInput: " + evt.$__modifiedInput());
+          // console.log("modifierFlags: " + evt.$__modifierFlags());
+          // console.log("privateInput: " + evt.$__privateInput());
+          // console.log("shiftModifiedInput: " + evt.$__shiftModifiedInput());
+          // console.log("unmodifiedInput: " + evt.$__unmodifiedInput());
+
           const keyCode = evt.$__keyCode();
           const pressed = evt.$__isKeyDown();
           const keyString = codeToKey[keyCode];
@@ -97,6 +111,11 @@ export class SystemKeyHandler extends Observer {
           if (!codeToKey.hasOwnProperty(keyCode)) {
             return self.$ORIG__handleKeyUIEvent(evt);
           }
+
+          // Up -> 82
+          // Down -> 81
+          // Left -> 80
+          // Right -> 79
 
           // Exec commands
           if (keyCode === key.ctrl) {
